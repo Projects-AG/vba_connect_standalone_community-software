@@ -26,7 +26,7 @@ export class VideoService {
 
     constructor(
         private readonly livekitModel: LivekitModel,
-    ) {}
+    ) { }
 
     async createRoom(roomName: string) {
 
