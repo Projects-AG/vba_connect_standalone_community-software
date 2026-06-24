@@ -1,21 +1,7 @@
-// import { Injectable } from '@nestjs/common';
-
-// @Injectable()
-// export class VideoService {
-
-//     createRoom(roomName: string) {
-
-//         return {
-//             success: true,
-//             message: 'Room created successfully',
-//             roomName,
-//         };
-
-//     }
-
-// }
-
-import { Injectable } from '@nestjs/common';
+import {
+    Injectable,
+    InternalServerErrorException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
     RoomServiceClient,
@@ -23,12 +9,12 @@ import {
 } from 'livekit-server-sdk';
 
 @Injectable()
-export class VideoService {
+export class LivekitModel {
 
     private roomService: RoomServiceClient;
 
     constructor(
-        private configService: ConfigService,
+        private readonly configService: ConfigService,
     ) {
 
         this.roomService = new RoomServiceClient(
@@ -41,15 +27,19 @@ export class VideoService {
 
     async createRoom(roomName: string) {
 
-        const room = await this.roomService.createRoom({
-            name: roomName,
-        });
+        try {
 
-        return {
-            success: true,
-            message: 'Room created successfully',
-            room,
-        };
+            return await this.roomService.createRoom({
+                name: roomName,
+            });
+
+        } catch (error) {
+
+            throw new InternalServerErrorException(
+                'Failed to create LiveKit room',
+            );
+
+        }
 
     }
 
@@ -73,33 +63,19 @@ export class VideoService {
             canSubscribe: true,
         });
 
-        return {
-            success: true,
-            token: await token.toJwt(),
-        };
+        return await token.toJwt();
 
     }
 
     async getParticipants(roomName: string) {
 
-        const participants =
-            await this.roomService.listParticipants(roomName);
-
-        return {
-            success: true,
-            participants,
-        };
+        return await this.roomService.listParticipants(roomName);
 
     }
 
     async endRoom(roomName: string) {
 
         await this.roomService.deleteRoom(roomName);
-
-        return {
-            success: true,
-            message: 'Room ended successfully',
-        };
 
     }
 

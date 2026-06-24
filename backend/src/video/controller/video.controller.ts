@@ -29,17 +29,30 @@ import {
     Post,
 } from '@nestjs/common';
 
-import { VideoService } from './video.service';
-import { CreateRoomDto } from './dto/create-room.dto';
-import { CreateTokenDto } from './dto/create-token.dto';
+import {
+    ApiTags,
+    ApiOperation,
+    ApiResponse,
+} from '@nestjs/swagger';
 
+import { VideoService } from '../service/video.service';
+import { CreateRoomDto } from '../dto/create-room.dto';
+import { CreateTokenDto } from '../dto/create-token.dto';
+
+@ApiTags('Video')
 @Controller('video')
 export class VideoController {
 
     constructor(
         private readonly videoService: VideoService,
-    ) {}
-
+    ) { }
+    @ApiOperation({
+        summary: 'Create a LiveKit Room',
+    })
+    @ApiResponse({
+        status: 201,
+        description: 'Room created successfully',
+    })
     @Post('create-room')
     createRoom(
         @Body() dto: CreateRoomDto,
@@ -50,7 +63,13 @@ export class VideoController {
         );
 
     }
-
+    @ApiOperation({
+        summary: 'Generate Access Token',
+    })
+    @ApiResponse({
+        status: 201,
+        description: 'Token generated successfully',
+    })
     @Post('generate-token')
     generateToken(
         @Body() dto: CreateTokenDto,
@@ -62,7 +81,13 @@ export class VideoController {
         );
 
     }
-
+    @ApiOperation({
+        summary: 'Get Room Participants',
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Participants fetched successfully',
+    })
     @Get('participants/:roomName')
     getParticipants(
         @Param('roomName') roomName: string,
@@ -73,7 +98,13 @@ export class VideoController {
         );
 
     }
-
+    @ApiOperation({
+        summary: 'End LiveKit Room',
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Room ended successfully',
+    })
     @Delete('end-room/:roomName')
     endRoom(
         @Param('roomName') roomName: string,
