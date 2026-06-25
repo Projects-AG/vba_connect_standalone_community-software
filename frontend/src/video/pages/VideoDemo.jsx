@@ -56,11 +56,11 @@
 //     );
 
 // }
-
-import JoinScreen from "../components/JoinScreen";
-import VideoCall from "../components/VideoCall";
-
-import { useVideoRoom } from "../hooks/useVideoRoom";
+import {
+    JoinScreen,
+    VideoCall,
+    useVideoRoom,
+} from "../index";
 
 export default function VideoDemo() {
 

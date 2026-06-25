@@ -122,12 +122,21 @@
 // export default App
 
 
-import VideoDemo from "./video/pages/VideoDemo";
+// import VideoDemo from "./video/pages/VideoDemo";
 
-function App() {
+// function App() {
 
-  return <VideoDemo />;
+//   return <VideoDemo />;
+
+// }
+
+// export default App;
+
+import NotificationDemo
+  from "./notification/NotificationDemo";
+
+export default function App() {
+
+  return <NotificationDemo />;
 
 }
-
-export default App;

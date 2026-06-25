@@ -39,8 +39,9 @@ import {
 } from "@livekit/components-react";
 
 import "@livekit/components-styles";
-
-const LIVEKIT_URL = import.meta.env.VITE_LIVEKIT_URL;
+import { videoTheme } from "../theme/videoTheme";
+import { videoConfig } from "../config/videoConfig";
+// const LIVEKIT_URL = import.meta.env.VITE_LIVEKIT_URL;
 
 export default function VideoCall({
 
@@ -53,15 +54,16 @@ export default function VideoCall({
     return (
 
         <LiveKitRoom
-            serverUrl={LIVEKIT_URL}
+            serverUrl={videoConfig.livekitUrl}
             token={token}
             connect={true}
-            video={true}
-            audio={true}
-            data-lk-theme="default"
+            video={videoTheme.video}
+            audio={videoTheme.audio}
+            data-lk-theme={videoTheme.theme}
             onDisconnected={leaveRoom}
+
             style={{
-                height: "100vh",
+                height: videoTheme.height,
             }}
         >
 

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { VideoModule } from './video/video.module';
+import { NotificationModule } from './notifications/notification.module';
 
 @Module({
   imports: [
@@ -8,6 +9,7 @@ import { VideoModule } from './video/video.module';
       isGlobal: true,
     }),
     VideoModule,
+    NotificationModule
   ],
 })
-export class AppModule {}
+export class AppModule { }
