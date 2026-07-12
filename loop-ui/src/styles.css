@@ -1,0 +1,14 @@
+/**
+ * Styles for consumers:
+ *   import '@loop/ui/styles.css'
+ *
+ * Avoids resetting host app html/body/#root.
+ */
+@import "tailwindcss";
+@import "./theme/tokens.css";
+
+.loop-ui-root {
+  font-family: var(--font-loop), Inter, ui-sans-serif, system-ui, sans-serif;
+  color: var(--color-on-surface);
+  background: var(--color-background);
+}
