@@ -4,6 +4,7 @@ export default function CallRequestList({
     requests,
     onApprove,
     onReject,
+    onJoinMeeting,
 }) {
 
     if (requests.length === 0) {
@@ -41,6 +42,7 @@ export default function CallRequestList({
                     request={request}
                     onApprove={onApprove}
                     onReject={onReject}
+                    onJoinMeeting={onJoinMeeting}
                 />
 
             ))}

@@ -61,6 +61,8 @@ import {
     VideoCall,
     useVideoRoom,
 } from "../index";
+import { useEffect } from "react";
+import { useMeetingContext } from "../../meetings/context/MeetingContext";
 
 export default function VideoDemo() {
 
@@ -73,14 +75,39 @@ export default function VideoDemo() {
         leaveRoom,
     } = useVideoRoom();
 
+    const { meeting, endMeeting } = useMeetingContext();
+
+    const handleLeaveMeeting = () => {
+
+        leaveRoom();
+
+        endMeeting();
+
+    };
+
+    useEffect(() => {
+
+        if (!meeting) return;
+
+        joinRoom(
+            meeting.roomName,
+            meeting.participantName
+        );
+
+    }, [meeting]);
+
     if (token) {
 
         return (
+            // <VideoCall
+            //     token={token}
+            //     roomName={roomName}
+            //     participantName={participantName}
+            //     leaveRoom={leaveRoom}
+            // />
             <VideoCall
                 token={token}
-                roomName={roomName}
-                participantName={participantName}
-                leaveRoom={leaveRoom}
+                leaveRoom={handleLeaveMeeting}
             />
         );
 

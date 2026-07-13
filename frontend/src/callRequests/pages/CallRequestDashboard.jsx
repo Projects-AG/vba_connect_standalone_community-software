@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import CallRequestList from "../components/CallRequestList";
 import { callRequestConfig } from "../config/callRequestConfig";
 import useCallRequests from "../hooks/useCallRequests";
+import { useMeetingContext } from "../../meetings/context/MeetingContext";
 
 export default function CallRequestDashboard() {
 
@@ -12,6 +13,8 @@ export default function CallRequestDashboard() {
         approveRequest,
         rejectRequest,
     } = useCallRequests();
+
+    const { startMeeting } = useMeetingContext();
 
     const [search, setSearch] = useState("");
     const [status, setStatus] = useState("All");
@@ -54,6 +57,36 @@ export default function CallRequestDashboard() {
             (r) => r.status === "Rejected"
         ).length,
 
+    };
+
+    const handleJoinMeeting = (request) => {
+        const meeting = startMeeting({
+            roomName: `call-${request.id}`,
+
+            participantName: request.leaderName,
+
+            leaderId: request.leaderId,
+
+            leaderName: request.leaderName,
+
+            designation: request.designation,
+
+            meetingTitle: request.meetingTitle,
+
+            meetingType: request.meetingType,
+
+            meetingDate: request.meetingDate,
+
+            meetingTime: request.meetingTime,
+
+            purpose: request.purpose,
+
+            priority: request.priority,
+
+            notes: request.notes,
+        });
+
+        console.log("Meeting Started:", meeting);
     };
 
     return (
@@ -161,8 +194,8 @@ export default function CallRequestDashboard() {
                         requests={filteredRequests}
                         onApprove={approveRequest}
                         onReject={rejectRequest}
+                        onJoinMeeting={handleJoinMeeting}
                     />
-
                 )}
 
             </div>

@@ -44,16 +44,26 @@
 //   );
 
 // }
-import { useState } from "react";
-
+import { useState, useEffect } from "react";
 import VideoDemo from "./video/pages/VideoDemo";
+import { useMeetingContext } from "./meetings/context/MeetingContext";
 import NotificationDemo from "./notification/pages/NotificationDemo";
 import { LeadershipDirectory } from "./leadership";
 import { CallRequestDashboard } from "./callRequests";
 
 export default function App() {
 
+  const { meeting } = useMeetingContext();
   const [activeDemo, setActiveDemo] = useState("leadership");
+  useEffect(() => {
+
+    if (meeting) {
+
+      setActiveDemo("video");
+
+    }
+
+  }, [meeting]);
 
   return (
     <div className="min-h-screen bg-gray-100">

@@ -16,6 +16,14 @@ export default function CallRequestForm({
 
     const [notes, setNotes] = useState("");
 
+    const [meetingTitle, setMeetingTitle] = useState("");
+
+    const [meetingType, setMeetingType] = useState("instant");
+
+    const [meetingDate, setMeetingDate] = useState("");
+
+    const [meetingTime, setMeetingTime] = useState("");
+
     const handleSubmit = (e) => {
 
         e.preventDefault();
@@ -28,6 +36,15 @@ export default function CallRequestForm({
 
             designation: leader.designation,
 
+            meetingTitle:
+                meetingTitle.trim() || `Meeting with ${leader.name}`,
+
+            meetingType,
+
+            meetingDate,
+
+            meetingTime,
+
             purpose,
 
             priority,
@@ -35,7 +52,6 @@ export default function CallRequestForm({
             notes,
 
         });
-
     };
 
     return (
@@ -57,6 +73,52 @@ export default function CallRequestForm({
                     className="w-full rounded-xl border bg-gray-100 px-4 py-3"
                 />
 
+            </div>
+
+            <div>
+                <label className="mb-2 block text-sm font-semibold text-gray-700">
+                    Meeting Title
+                </label>
+
+                <input
+                    type="text"
+                    value={meetingTitle}
+                    onChange={(e) => setMeetingTitle(e.target.value)}
+                    placeholder="Project Discussion"
+                    className="w-full rounded-xl border px-4 py-3"
+                />
+            </div>
+
+            <div>
+                <label className="mb-3 block text-sm font-semibold text-gray-700">
+                    Meeting Type
+                </label>
+
+                <div className="flex gap-6">
+
+                    <label className="flex cursor-pointer items-center gap-2">
+                        <input
+                            type="radio"
+                            value="instant"
+                            checked={meetingType === "instant"}
+                            onChange={(e) => setMeetingType(e.target.value)}
+                        />
+
+                        <span>⚡ Instant Meeting</span>
+                    </label>
+
+                    <label className="flex cursor-pointer items-center gap-2">
+                        <input
+                            type="radio"
+                            value="scheduled"
+                            checked={meetingType === "scheduled"}
+                            onChange={(e) => setMeetingType(e.target.value)}
+                        />
+
+                        <span>📅 Schedule Meeting</span>
+                    </label>
+
+                </div>
             </div>
 
             <div>
@@ -112,6 +174,44 @@ export default function CallRequestForm({
                 </select>
 
             </div>
+
+            {meetingType === "scheduled" && (
+
+                <div className="grid grid-cols-2 gap-4">
+
+                    <div>
+
+                        <label className="mb-2 block text-sm font-semibold text-gray-700">
+                            Meeting Date
+                        </label>
+
+                        <input
+                            type="date"
+                            value={meetingDate}
+                            onChange={(e) => setMeetingDate(e.target.value)}
+                            className="w-full rounded-xl border px-4 py-3"
+                        />
+
+                    </div>
+
+                    <div>
+
+                        <label className="mb-2 block text-sm font-semibold text-gray-700">
+                            Meeting Time
+                        </label>
+
+                        <input
+                            type="time"
+                            value={meetingTime}
+                            onChange={(e) => setMeetingTime(e.target.value)}
+                            className="w-full rounded-xl border px-4 py-3"
+                        />
+
+                    </div>
+
+                </div>
+
+            )}
 
             <div>
 

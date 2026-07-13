@@ -4,6 +4,7 @@ export default function CallRequestCard({
     request,
     onApprove,
     onReject,
+    onJoinMeeting,
 }) {
 
     return (
@@ -17,7 +18,9 @@ export default function CallRequestCard({
                     <h3 className="text-xl font-bold text-gray-800">
                         {request.leaderName}
                     </h3>
-
+                    <p className="mt-1 text-lg font-semibold text-violet-700">
+                        {request.meetingTitle}
+                    </p>
                     <p className="mt-1 text-sm text-gray-500">
                         {request.designation}
                     </p>
@@ -66,6 +69,55 @@ export default function CallRequestCard({
                 <div className="flex justify-between">
 
                     <span className="font-medium text-gray-500">
+                        Meeting Type
+                    </span>
+
+                    <span
+                        className={`rounded-full px-3 py-1 text-xs font-semibold ${request.meetingType === "scheduled"
+                            ? "bg-blue-100 text-blue-700"
+                            : "bg-green-100 text-green-700"
+                            }`}
+                    >
+                        {request.meetingType === "scheduled"
+                            ? "📅 Scheduled"
+                            : "⚡ Instant"}
+                    </span>
+
+                </div>
+
+                {request.meetingType === "scheduled" && (
+
+                    <>
+                        <div className="flex justify-between">
+
+                            <span className="font-medium text-gray-500">
+                                Date
+                            </span>
+
+                            <span className="text-gray-700">
+                                {request.meetingDate}
+                            </span>
+
+                        </div>
+
+                        <div className="flex justify-between">
+
+                            <span className="font-medium text-gray-500">
+                                Time
+                            </span>
+
+                            <span className="text-gray-700">
+                                {request.meetingTime}
+                            </span>
+
+                        </div>
+                    </>
+
+                )}
+
+                <div className="flex justify-between">
+
+                    <span className="font-medium text-gray-500">
                         Requested
                     </span>
 
@@ -100,6 +152,7 @@ export default function CallRequestCard({
             {request.status === "Approved" && (
 
                 <button
+                    onClick={() => onJoinMeeting(request)}
                     className="mt-4 w-full rounded-xl bg-violet-600 py-3 font-semibold text-white transition hover:bg-violet-700"
                 >
                     🎥 Join Meeting

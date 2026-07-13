@@ -113,8 +113,9 @@ export function useVideoRoom() {
 
         setParticipantName("");
 
-    };
+        console.log("Disconnected from room");
 
+    };
     return {
 
         loading,

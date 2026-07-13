@@ -13,9 +13,9 @@ export default function CallRequestModal({
 
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
 
-            <div className="w-full max-w-2xl rounded-3xl bg-white shadow-2xl">
+            <div className="w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-3xl bg-white shadow-2xl">
 
-                <div className="flex items-center justify-between border-b px-8 py-5">
+                <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-white px-8 py-5">
 
                     <div>
 
@@ -38,7 +38,7 @@ export default function CallRequestModal({
 
                 </div>
 
-                <div className="p-8">
+                <div className="max-h-[calc(90vh-100px)] overflow-y-auto p-8">
 
                     <CallRequestForm
                         leader={leader}
