@@ -60,7 +60,9 @@ export default function CallRequestDashboard() {
     };
 
     const handleJoinMeeting = (request) => {
+        console.log(request);
         const meeting = startMeeting({
+
             roomName: `call-${request.id}`,
 
             participantName: request.leaderName,
@@ -84,9 +86,16 @@ export default function CallRequestDashboard() {
             priority: request.priority,
 
             notes: request.notes,
+
+
+            callType: request.callType,
+
+            participants: request.participants,
+
         });
 
         console.log("Meeting Started:", meeting);
+
     };
 
     return (

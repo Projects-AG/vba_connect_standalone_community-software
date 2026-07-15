@@ -24,6 +24,27 @@ export default function CallRequestForm({
 
     const [meetingTime, setMeetingTime] = useState("");
 
+    const [callType, setCallType] = useState("one-to-one");
+
+    const members = [
+        "Amit",
+        "Priya",
+        "Rahul",
+        "Neha",
+        "Karan",
+        "Rakesh",
+    ];
+
+    const [selectedParticipants, setSelectedParticipants] = useState([]);
+
+    const toggleParticipant = (name) => {
+        setSelectedParticipants((prev) =>
+            prev.includes(name)
+                ? prev.filter((p) => p !== name)
+                : [...prev, name]
+        );
+    };
+
     const handleSubmit = (e) => {
 
         e.preventDefault();
@@ -51,6 +72,12 @@ export default function CallRequestForm({
 
             notes,
 
+            callType,
+
+            participants:
+                callType === "group"
+                    ? selectedParticipants
+                    : [leader.name],
         });
     };
 
@@ -123,8 +150,94 @@ export default function CallRequestForm({
 
             <div>
 
+                <label className="mb-2 block font-semibold">
+
+                    Call Type
+
+                </label>
+
+                <div className="flex gap-6">
+
+                    <label className="flex items-center gap-2">
+
+                        <input
+                            type="radio"
+                            value="one-to-one"
+                            checked={callType === "one-to-one"}
+                            onChange={(e) => setCallType(e.target.value)}
+                        />
+
+                        One to One
+
+                    </label>
+
+                    <label className="flex items-center gap-2">
+
+                        <input
+                            type="radio"
+                            value="group"
+                            checked={callType === "group"}
+                            onChange={(e) => setCallType(e.target.value)}
+                        />
+
+                        Group Meeting
+
+                    </label>
+
+                </div>
+
+            </div>
+            <div>
+
                 <label className="mb-2 block text-sm font-semibold text-gray-700">
                     Purpose
+
+                    {callType === "group" && (
+
+                        <div className="rounded-xl border border-gray-200 bg-gray-50 p-5">
+
+                            <h3 className="mb-4 text-lg font-semibold text-gray-800">
+                                Select Participants
+                            </h3>
+
+                            <div className="grid grid-cols-2 gap-3">
+
+                                {members.map((member) => (
+
+                                    <label
+                                        key={member}
+                                        className="flex cursor-pointer items-center gap-3 rounded-lg bg-white p-3 shadow-sm"
+                                    >
+
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedParticipants.includes(member)}
+                                            onChange={() => toggleParticipant(member)}
+                                        />
+
+                                        <span>{member}</span>
+
+                                    </label>
+
+                                ))}
+
+                            </div>
+
+                            <div className="mt-5 rounded-lg bg-violet-100 p-3">
+
+                                <span className="font-semibold">
+                                    Selected:
+                                </span>{" "}
+
+                                {selectedParticipants.length > 0
+                                    ? selectedParticipants.join(", ")
+                                    : "No participants selected"}
+
+                            </div>
+
+                        </div>
+
+                    )}
                 </label>
 
                 <select

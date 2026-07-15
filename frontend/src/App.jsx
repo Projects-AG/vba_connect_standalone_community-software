@@ -139,6 +139,7 @@ import {
 
 import VideoDemo from "./video/pages/VideoDemo";
 import NotificationDemo from "./notification/pages/NotificationDemo";
+import MeetingDashboard from "./meetings/pages/MeetingDashboard";
 import JoinMeetingPage from "./meetings/pages/JoinMeetingPage";
 import { LeadershipDirectory } from "./leadership";
 import { CallRequestDashboard } from "./callRequests";
@@ -214,6 +215,16 @@ export default function App() {
                 📞 Call Requests
               </button>
 
+              <button
+                onClick={() => setActiveDemo("meeting")}
+                className={`px-6 py-2 rounded-lg font-semibold transition ${activeDemo === "meeting"
+                  ? "bg-indigo-600 text-white"
+                  : "bg-gray-200 hover:bg-gray-300"
+                  }`}
+              >
+                📅 Meetings
+              </button>
+
             </div>
 
             {activeDemo === "video" && <VideoDemo />}
@@ -223,6 +234,8 @@ export default function App() {
             {activeDemo === "leadership" && <LeadershipDirectory />}
 
             {activeDemo === "call" && <CallRequestDashboard />}
+
+            {activeDemo === "meeting" && <MeetingDashboard />}
 
           </div>
 

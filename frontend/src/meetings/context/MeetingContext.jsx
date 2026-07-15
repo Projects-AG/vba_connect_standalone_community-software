@@ -219,9 +219,19 @@ export function MeetingProvider({ children }) {
             host:
                 meetingData.participantName,
 
-            participants: [
-                meetingData.participantName,
-            ],
+            callType:
+                meetingData.callType || "one-to-one",
+
+            participants:
+                meetingData.participants?.length > 0
+                    ? meetingData.participants
+                    : [meetingData.participantName],
+            participantCount:
+                meetingData.participants?.length || 1,
+            invitedParticipants:
+                meetingData.participants?.length > 0
+                    ? meetingData.participants
+                    : [meetingData.participantName],
 
             meetingLink:
                 `${window.location.origin}/join/${meetingId}`,
