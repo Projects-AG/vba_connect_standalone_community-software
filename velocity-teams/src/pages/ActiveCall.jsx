@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import NavRail from '../components/NavRail'
+import LiveVideoGrid from "../livekit/LiveVideoGrid";
+// import useMeetingControls from "../livekit/useMeetingControls";
 import { contacts as allContacts } from '../data/mockData'
+import {
+  LiveKitRoom,
+  VideoConference,
+} from "@livekit/components-react";
+// import { useEffect } from "react";
+import { meetingApi } from "../services/meetingApi";
 
 const tileImgs = {
   c1: 'https://i.pravatar.cc/400?img=5',
@@ -26,11 +34,61 @@ export default function ActiveCall() {
   const navigate = useNavigate()
   const timer = useElapsedTimer()
 
-  const meeting = state || { title: 'Weekly Alignment: Q4 Roadmap', callType: 'group', participants: allContacts.slice(0, 5) }
+  // const meeting = state || { title: 'Weekly Alignment: Q4 Roadmap', callType: 'group', participants: allContacts.slice(0, 5) }
+  const meeting =
+    state || {};
+  const [token, setToken] = useState(null);
+
+  useEffect(() => {
+
+    if (!meeting.meetingId) return;
+
+    async function joinMeeting() {
+
+      const response =
+        await meetingApi.generateToken(
+
+          meeting.meetingId,
+
+          "Nityam",
+
+        );
+
+      setToken(response.token);
+
+      console.log(response);
+
+    }
+
+    joinMeeting();
+
+  }, [meeting]);
+
+  useEffect(() => {
+
+    if (token) {
+
+      console.log("LiveKit Token");
+
+      console.log(token);
+
+    }
+
+  }, [token]);
+
   const participants = meeting.participants?.length ? meeting.participants : allContacts.slice(0, 5)
 
   const [muted, setMuted] = useState(false)
   const [cameraOn, setCameraOn] = useState(true)
+  // const {
+  //   toggleMic,
+  //   toggleCamera,
+  //   micEnabled,
+  //   cameraEnabled,
+  // } = useMeetingControls();
+
+  // const muted = !micEnabled;
+  // const cameraOn = cameraEnabled;
   const [sharing, setSharing] = useState(false)
   const [chatOpen, setChatOpen] = useState(true)
   const [messages, setMessages] = useState([
@@ -86,14 +144,27 @@ export default function ActiveCall() {
 
         {/* Video & Chat Content Area */}
         <div className="flex-1 flex px-8 pb-32 pt-4 gap-6 overflow-hidden">
-          {/* Central Video Grid */}
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-content-entrance overflow-y-auto custom-scrollbar">
+          {
+            token && (
+              <LiveKitRoom
+                serverUrl={import.meta.env.VITE_LIVEKIT_URL}
+                token={token}
+                connect={true}
+                video={true}
+                audio={true}
+                className="flex-1"
+              >
+                <LiveVideoGrid
+                  cameraOn={cameraOn}
+                />
+                {/* Central Video Grid */}
+                {/* <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-content-entrance overflow-y-auto custom-scrollbar">
             {participants.map((p, i) => (
               <VideoTile key={p.id || i} person={p} speaking={i === 0} />
             ))}
 
             {/* AI Real-time summary tile */}
-            <div className="relative rounded-xl overflow-hidden bg-primary-container p-6 flex flex-col justify-between shadow-lg ring-1 ring-primary/20">
+                {/* <div className="relative rounded-xl overflow-hidden bg-primary-container p-6 flex flex-col justify-between shadow-lg ring-1 ring-primary/20">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
                   <span className="material-symbols-outlined text-white" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
@@ -122,79 +193,82 @@ export default function ActiveCall() {
                 </div>
               </div>
             )}
-          </div>
+          </div> */}
 
-          {/* Right Sidebar: Chat */}
-          {chatOpen && (
-            <aside className="w-80 bg-surface-container-lowest rounded-2xl flex flex-col shadow-xl ring-1 ring-outline-variant/10 animate-content-entrance">
-              <div className="p-4 border-b border-outline-variant flex justify-between items-center">
-                <h2 className="font-headline-md text-headline-md font-bold">In-call Chat</h2>
-                <button
-                  onClick={() => setChatOpen(false)}
-                  className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors"
-                >
-                  <span className="material-symbols-outlined text-on-surface-variant">close</span>
-                </button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
-                {messages.map((m) =>
-                  m.mine ? (
-                    <div key={m.id} className="space-y-1 flex flex-col items-end">
-                      <div className="flex justify-between items-baseline w-full">
-                        <span className="text-[10px] text-outline">{m.time}</span>
-                        <span className="font-label-md text-label-md text-primary font-bold">You</span>
-                      </div>
-                      <div className="bg-primary-container text-white p-3 rounded-xl rounded-tr-none font-body-md text-body-md max-w-[85%]">
-                        {m.text}
+                {/* Right Sidebar: Chat */}
+                {chatOpen && (
+                  <aside className="w-80 bg-surface-container-lowest rounded-2xl flex flex-col shadow-xl ring-1 ring-outline-variant/10 animate-content-entrance">
+                    <div className="p-4 border-b border-outline-variant flex justify-between items-center">
+                      <h2 className="font-headline-md text-headline-md font-bold">In-call Chat</h2>
+                      <button
+                        onClick={() => setChatOpen(false)}
+                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-on-surface-variant">close</span>
+                      </button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
+                      {messages.map((m) =>
+                        m.mine ? (
+                          <div key={m.id} className="space-y-1 flex flex-col items-end">
+                            <div className="flex justify-between items-baseline w-full">
+                              <span className="text-[10px] text-outline">{m.time}</span>
+                              <span className="font-label-md text-label-md text-primary font-bold">You</span>
+                            </div>
+                            <div className="bg-primary-container text-white p-3 rounded-xl rounded-tr-none font-body-md text-body-md max-w-[85%]">
+                              {m.text}
+                            </div>
+                          </div>
+                        ) : (
+                          <div key={m.id} className="space-y-1">
+                            <div className="flex justify-between items-baseline">
+                              <span className="font-label-md text-label-md text-on-surface-variant font-bold">{m.from}</span>
+                              <span className="text-[10px] text-outline">{m.time}</span>
+                            </div>
+                            <div className="bg-surface-container text-on-surface p-3 rounded-xl rounded-tl-none font-body-md text-body-md max-w-[85%]">
+                              {m.text}
+                            </div>
+                          </div>
+                        )
+                      )}
+
+                      {/* AI Copilot Suggestion */}
+                      <div className="bg-surface-container-low border border-primary/20 rounded-xl p-4 space-y-3 shadow-sm">
+                        <div className="flex items-center gap-2 text-primary">
+                          <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+                          <span className="font-label-md text-label-md font-bold">AI Copilot</span>
+                        </div>
+                        <p className="font-body-sm text-body-sm text-on-surface-variant">
+                          Elena mentioned a Figma link. Would you like me to find the most recent 'Q4 Roadmap' link in your shared drive?
+                        </p>
+                        <button className="w-full py-2 bg-white border border-outline-variant rounded-lg font-label-md text-label-md text-primary hover:bg-primary-container/5 transition-colors">
+                          Search Links
+                        </button>
                       </div>
                     </div>
-                  ) : (
-                    <div key={m.id} className="space-y-1">
-                      <div className="flex justify-between items-baseline">
-                        <span className="font-label-md text-label-md text-on-surface-variant font-bold">{m.from}</span>
-                        <span className="text-[10px] text-outline">{m.time}</span>
-                      </div>
-                      <div className="bg-surface-container text-on-surface p-3 rounded-xl rounded-tl-none font-body-md text-body-md max-w-[85%]">
-                        {m.text}
+                    <div className="p-4 border-t border-outline-variant">
+                      <div className="relative">
+                        <input
+                          value={draft}
+                          onChange={(e) => setDraft(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                          className="w-full bg-surface-container border-none rounded-xl py-3 pl-4 pr-12 focus:ring-2 focus:ring-primary/20 transition-all font-body-md text-body-md"
+                          placeholder="Type a message..."
+                          type="text"
+                        />
+                        <button
+                          onClick={sendMessage}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-primary active:scale-90 transition-transform"
+                        >
+                          <span className="material-symbols-outlined">send</span>
+                        </button>
                       </div>
                     </div>
-                  )
+                  </aside>
                 )}
+              </LiveKitRoom>
 
-                {/* AI Copilot Suggestion */}
-                <div className="bg-surface-container-low border border-primary/20 rounded-xl p-4 space-y-3 shadow-sm">
-                  <div className="flex items-center gap-2 text-primary">
-                    <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
-                    <span className="font-label-md text-label-md font-bold">AI Copilot</span>
-                  </div>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">
-                    Elena mentioned a Figma link. Would you like me to find the most recent 'Q4 Roadmap' link in your shared drive?
-                  </p>
-                  <button className="w-full py-2 bg-white border border-outline-variant rounded-lg font-label-md text-label-md text-primary hover:bg-primary-container/5 transition-colors">
-                    Search Links
-                  </button>
-                </div>
-              </div>
-              <div className="p-4 border-t border-outline-variant">
-                <div className="relative">
-                  <input
-                    value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                    className="w-full bg-surface-container border-none rounded-xl py-3 pl-4 pr-12 focus:ring-2 focus:ring-primary/20 transition-all font-body-md text-body-md"
-                    placeholder="Type a message..."
-                    type="text"
-                  />
-                  <button
-                    onClick={sendMessage}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-primary active:scale-90 transition-transform"
-                  >
-                    <span className="material-symbols-outlined">send</span>
-                  </button>
-                </div>
-              </div>
-            </aside>
-          )}
+            )}
         </div>
 
         {/* Floating Bottom Control Bar */}
@@ -204,13 +278,15 @@ export default function ActiveCall() {
               active={!muted}
               icon={muted ? 'mic_off' : 'mic'}
               label="Mute"
-              onClick={() => setMuted((v) => !v)}
+              // onClick={() => setMuted((v) => !v)}
+              onClick={toggleMic}
             />
             <ControlButton
               active={cameraOn}
               icon={cameraOn ? 'videocam' : 'videocam_off'}
               label="Camera"
-              onClick={() => setCameraOn((v) => !v)}
+              // onClick={() => setCameraOn((v) => !v)}
+              onClick={toggleCamera}
             />
             <ControlButton
               active={!sharing}
@@ -223,9 +299,8 @@ export default function ActiveCall() {
             <div className="flex flex-col items-center group">
               <button
                 onClick={() => setChatOpen((v) => !v)}
-                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 active:scale-95 ${
-                  chatOpen ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-surface-variant text-on-surface-variant hover:bg-outline-variant'
-                }`}
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 active:scale-95 ${chatOpen ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-surface-variant text-on-surface-variant hover:bg-outline-variant'
+                  }`}
               >
                 <span className="material-symbols-outlined">chat</span>
               </button>
@@ -258,13 +333,12 @@ function ControlButton({ active, icon, label, onClick, highlighted }) {
     <div className="flex flex-col items-center group">
       <button
         onClick={onClick}
-        className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 active:scale-95 ${
-          highlighted
-            ? 'bg-primary text-white shadow-lg shadow-primary/20'
-            : active
+        className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 active:scale-95 ${highlighted
+          ? 'bg-primary text-white shadow-lg shadow-primary/20'
+          : active
             ? 'bg-surface-variant text-on-surface-variant hover:bg-outline-variant'
             : 'bg-error/10 text-error hover:bg-error/20'
-        }`}
+          }`}
       >
         <span className="material-symbols-outlined">{icon}</span>
       </button>
@@ -295,9 +369,8 @@ function VideoTile({ person, speaking }) {
 
   return (
     <div
-      className={`relative rounded-xl overflow-hidden bg-on-background shadow-lg ring-1 ${
-        speaking ? 'ring-2 ring-primary' : 'ring-outline-variant/10'
-      }`}
+      className={`relative rounded-xl overflow-hidden bg-on-background shadow-lg ring-1 ${speaking ? 'ring-2 ring-primary' : 'ring-outline-variant/10'
+        }`}
     >
       <img className="w-full h-full object-cover" src={img} alt={person.name} />
       <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-on-background/40 backdrop-blur-md text-white px-3 py-1.5 rounded-lg border border-white/10">

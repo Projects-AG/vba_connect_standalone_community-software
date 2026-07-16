@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { contacts } from '../data/mockData'
-
+import { meetingApi } from "../services/meetingApi";
 /**
  * NewMeetingModal
  * props:
@@ -30,22 +30,70 @@ export default function NewMeetingModal({ open, onClose, onStartInstant, onSched
   const selectedContacts = contacts.filter((c) => selectedIds.includes(c.id))
   const canSubmit = selectedIds.length > 0 && (mode === 'instant' || (title && date && time))
 
-  const handleSubmit = () => {
-    const meeting = {
-      title: title || (callType === '1:1' ? selectedContacts[0]?.name : `Group call (${selectedContacts.length})`),
-      callType,
-      participants: selectedContacts,
-      date,
-      time,
-    }
-    if (mode === 'instant') {
-      onStartInstant?.(meeting)
-    } else {
-      onSchedule?.(meeting)
-    }
-    reset()
-  }
+  // const handleSubmit = () => {
+  //   const meeting = {
+  //     title: title || (callType === '1:1' ? selectedContacts[0]?.name : `Group call (${selectedContacts.length})`),
+  //     callType,
+  //     participants: selectedContacts,
+  //     date,
+  //     time,
+  //   }
+  //   if (mode === 'instant') {
+  //     onStartInstant?.(meeting)
+  //   } else {
+  //     onSchedule?.(meeting)
+  //   }
+  //   reset()
+  // }
+  const handleSubmit = async () => {
 
+    const payload = {
+
+      title:
+        title ||
+        (callType === "1:1"
+          ? selectedContacts[0]?.name
+          : `Group Call (${selectedContacts.length})`),
+
+      type:
+        mode,
+
+      callType,
+
+      participants: selectedContacts.map((p) => p.name),
+
+      date,
+
+      time,
+
+    };
+
+    const response =
+      await meetingApi.createMeeting(payload);
+
+    if (!response.success) {
+
+      alert("Unable to create meeting");
+
+      return;
+
+    }
+
+    const meeting = response.data;
+
+    if (mode === "instant") {
+
+      onStartInstant?.(meeting);
+
+    } else {
+
+      onSchedule?.(meeting);
+
+    }
+
+    reset();
+
+  };
   const reset = () => {
     setMode('instant')
     setCallType('1:1')
@@ -75,18 +123,16 @@ export default function NewMeetingModal({ open, onClose, onStartInstant, onSched
           <div className="flex bg-surface-container-low rounded-xl p-1">
             <button
               onClick={() => setMode('instant')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-headline-md text-headline-md transition-all duration-200 ${
-                mode === 'instant' ? 'bg-primary text-on-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'
-              }`}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-headline-md text-headline-md transition-all duration-200 ${mode === 'instant' ? 'bg-primary text-on-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'
+                }`}
             >
               <span className="material-symbols-outlined text-[18px]">bolt</span>
               Meet Now
             </button>
             <button
               onClick={() => setMode('schedule')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-headline-md text-headline-md transition-all duration-200 ${
-                mode === 'schedule' ? 'bg-primary text-on-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'
-              }`}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg font-headline-md text-headline-md transition-all duration-200 ${mode === 'schedule' ? 'bg-primary text-on-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'
+                }`}
             >
               <span className="material-symbols-outlined text-[18px]">event</span>
               Schedule
@@ -102,22 +148,20 @@ export default function NewMeetingModal({ open, onClose, onStartInstant, onSched
                   setCallType('1:1')
                   setSelectedIds((prev) => prev.slice(0, 1))
                 }}
-                className={`flex-1 flex items-center gap-2 px-4 py-2.5 rounded-lg border font-label-md text-label-md transition-all ${
-                  callType === '1:1'
-                    ? 'border-primary bg-primary/5 text-primary'
-                    : 'border-outline-variant text-on-surface-variant hover:bg-surface-container'
-                }`}
+                className={`flex-1 flex items-center gap-2 px-4 py-2.5 rounded-lg border font-label-md text-label-md transition-all ${callType === '1:1'
+                  ? 'border-primary bg-primary/5 text-primary'
+                  : 'border-outline-variant text-on-surface-variant hover:bg-surface-container'
+                  }`}
               >
                 <span className="material-symbols-outlined text-[18px]">person</span>
                 One-to-One
               </button>
               <button
                 onClick={() => setCallType('group')}
-                className={`flex-1 flex items-center gap-2 px-4 py-2.5 rounded-lg border font-label-md text-label-md transition-all ${
-                  callType === 'group'
-                    ? 'border-primary bg-primary/5 text-primary'
-                    : 'border-outline-variant text-on-surface-variant hover:bg-surface-container'
-                }`}
+                className={`flex-1 flex items-center gap-2 px-4 py-2.5 rounded-lg border font-label-md text-label-md transition-all ${callType === 'group'
+                  ? 'border-primary bg-primary/5 text-primary'
+                  : 'border-outline-variant text-on-surface-variant hover:bg-surface-container'
+                  }`}
               >
                 <span className="material-symbols-outlined text-[18px]">groups</span>
                 Group Call
@@ -170,9 +214,8 @@ export default function NewMeetingModal({ open, onClose, onStartInstant, onSched
                   <button
                     key={c.id}
                     onClick={() => toggleContact(c.id)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                      active ? 'bg-primary/10' : 'hover:bg-surface-container-low'
-                    }`}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${active ? 'bg-primary/10' : 'hover:bg-surface-container-low'
+                      }`}
                   >
                     <div className="relative w-9 h-9 rounded-full overflow-hidden bg-surface-container-high flex items-center justify-center flex-shrink-0">
                       {c.initials ? (
@@ -181,9 +224,8 @@ export default function NewMeetingModal({ open, onClose, onStartInstant, onSched
                         <img src={c.avatar} className="w-full h-full object-cover" alt={c.name} />
                       )}
                       <span
-                        className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-surface-container-lowest ${
-                          c.status === 'online' ? 'bg-green-500' : c.status === 'away' ? 'bg-yellow-500' : 'bg-outline-variant'
-                        }`}
+                        className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-surface-container-lowest ${c.status === 'online' ? 'bg-green-500' : c.status === 'away' ? 'bg-yellow-500' : 'bg-outline-variant'
+                          }`}
                       />
                     </div>
                     <div className="text-left flex-1">
@@ -209,9 +251,8 @@ export default function NewMeetingModal({ open, onClose, onStartInstant, onSched
           <button
             disabled={!canSubmit}
             onClick={handleSubmit}
-            className={`px-5 py-2.5 rounded-lg font-headline-md text-headline-md flex items-center gap-2 transition-all active:scale-[0.98] ${
-              canSubmit ? 'bg-primary text-on-primary shadow-lg shadow-primary/20 hover:bg-primary-container' : 'bg-surface-variant text-outline cursor-not-allowed'
-            }`}
+            className={`px-5 py-2.5 rounded-lg font-headline-md text-headline-md flex items-center gap-2 transition-all active:scale-[0.98] ${canSubmit ? 'bg-primary text-on-primary shadow-lg shadow-primary/20 hover:bg-primary-container' : 'bg-surface-variant text-outline cursor-not-allowed'
+              }`}
           >
             <span className="material-symbols-outlined text-[18px]">
               {mode === 'instant' ? 'call' : 'event_available'}
