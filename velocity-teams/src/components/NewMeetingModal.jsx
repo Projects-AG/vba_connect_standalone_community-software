@@ -48,25 +48,47 @@ export default function NewMeetingModal({ open, onClose, onStartInstant, onSched
   const handleSubmit = async () => {
 
     const payload = {
+      roomName: crypto.randomUUID(),
 
-      title:
+      meetingTitle:
         title ||
         (callType === "1:1"
           ? selectedContacts[0]?.name
           : `Group Call (${selectedContacts.length})`),
 
-      type:
-        mode,
+      meetingType: mode,
 
       callType,
 
+      meetingDate: date || "",
+
+      meetingTime: time || "",
+
+      host: "Nityam",
+
       participants: selectedContacts.map((p) => p.name),
-
-      date,
-
-      time,
-
     };
+
+    // const payload = {
+
+    //   title:
+    //     title ||
+    //     (callType === "1:1"
+    //       ? selectedContacts[0]?.name
+    //       : `Group Call (${selectedContacts.length})`),
+
+    //   type:
+    //     mode,
+
+    //   callType,
+
+    //   participants: selectedContacts.map((p) => p.name),
+
+    //   date,
+
+    //   time,
+
+    // };
 
     const response =
       await meetingApi.createMeeting(payload);
