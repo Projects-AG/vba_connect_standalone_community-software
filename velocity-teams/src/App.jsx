@@ -4,6 +4,7 @@ import Posts from './pages/Posts'
 import CallsHub from './pages/CallsHub'
 import ActiveCall from './pages/ActiveCall'
 import StubView from './pages/StubView'
+import JoinMeeting from "./pages/JoinMeeting";
 
 export default function App() {
   return (
@@ -13,6 +14,10 @@ export default function App() {
       <Route path="/posts" element={<Posts />} />
       <Route path="/calls" element={<CallsHub />} />
       <Route path="/calls/active" element={<ActiveCall />} />
+      <Route
+        path="/join/:meetingId"
+        element={<JoinMeeting />}
+      />
       <Route
         path="/activity"
         element={<StubView icon="notifications_active" title="Recent Activity" subtitle="Stay updated on all team movements." />}

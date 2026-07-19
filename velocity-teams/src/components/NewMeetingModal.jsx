@@ -1,14 +1,7 @@
 import { useState } from 'react'
 import { contacts } from '../data/mockData'
 import { meetingApi } from "../services/meetingApi";
-/**
- * NewMeetingModal
- * props:
- *  - open: boolean
- *  - onClose: () => void
- *  - onStartInstant: (meeting) => void   // fired for "Meet Now"
- *  - onSchedule: (meeting) => void       // fired for "Schedule"
- */
+
 export default function NewMeetingModal({ open, onClose, onStartInstant, onSchedule }) {
   const [mode, setMode] = useState('instant') // 'instant' | 'schedule'
   const [callType, setCallType] = useState('1:1') // '1:1' | 'group'
@@ -90,18 +83,43 @@ export default function NewMeetingModal({ open, onClose, onStartInstant, onSched
 
     // };
 
-    const response =
-      await meetingApi.createMeeting(payload);
+    // const response =
+    //   await meetingApi.createMeeting(payload);
+
+    // const meeting = res.data;
+
+    // const meetingLink =
+    //   `${window.location.origin}${meeting.meetingLink}`;
+
+    // await navigator.clipboard.writeText(meetingLink);
+
+    // alert("Meeting link copied successfully!");
+
+    // if (!response.success) {
+
+    //   alert("Unable to create meeting");
+
+    //   return;
+
+    // }
+
+    // const meeting = response.data;
+
+    const response = await meetingApi.createMeeting(payload);
 
     if (!response.success) {
-
       alert("Unable to create meeting");
-
       return;
-
     }
 
     const meeting = response.data;
+
+    const meetingLink =
+      `${window.location.origin}${meeting.meetingLink}`;
+
+    await navigator.clipboard.writeText(meetingLink);
+
+    alert("Meeting link copied successfully!");
 
     if (mode === "instant") {
 
