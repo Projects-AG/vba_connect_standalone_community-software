@@ -1,0 +1,28 @@
+# Azure App Service multi-container (one Web App).
+# Portal: Web App -> Deployment Center / Container settings -> Docker Compose
+# Upload this file. Use pre-built Hub images (no `build:` on App Service).
+#
+# Public URL hits `web` (nginx :80). API is proxied to `backend`.
+# LiveKit stays on Hostinger VPS (not in this compose).
+
+services:
+  web:
+    image: projectsag/project-loop:latest
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: always
+
+  backend:
+    image: projectsag/project-loop-backend:latest
+    environment:
+      PORT: "8080"
+      # Same-origin via nginx proxy — CORS rarely needed; keep for safety
+      CORS_ORIGINS: "https://vba691-project-loop.azurewebsites.net"
+      LIVEKIT_HOST: "http://127.0.0.1:7880"
+      LIVEKIT_API_KEY: "devkey"
+      LIVEKIT_API_SECRET: "myverylongsecretkey12345678901234567890"
+      JWT_SECRET: "project-loop-dev-secret-change-me"
+      JWT_EXPIRES_IN: "7d"
+    restart: always

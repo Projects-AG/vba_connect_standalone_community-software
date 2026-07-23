@@ -1,61 +1,23 @@
-// import { StrictMode } from "react";
-// import { createRoot } from "react-dom/client";
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
+import '@fontsource/inter/400.css'
+import '@fontsource/inter/500.css'
+import '@fontsource/inter/600.css'
+import '@fontsource/inter/700.css'
+import '@fontsource/inter/800.css'
+import 'material-symbols/outlined.css'
+import "@livekit/components-styles";
+import { AuthProvider } from './auth/AuthContext.jsx'
+import App from './App.jsx'
+import './index.css'
 
-// import "./index.css";
-// import App from "./App.jsx";
-
-// import { CallRequestProvider } from "./callRequests/context/CallRequestContext";
-// import { NotificationProvider } from "./notification/context/NotificationContext";
-// import { MeetingProvider } from "./meetings/context/MeetingContext";
-// createRoot(document.getElementById("root")).render(
-
-//   <StrictMode>
-
-//     <NotificationProvider>
-//       <CallRequestProvider>
-//         <MeetingProvider>
-//           <App />
-//         </MeetingProvider>
-//       </CallRequestProvider>
-//     </NotificationProvider>
-
-//   </StrictMode>
-
-// );
-
-import { StrictMode } from "react";
-import { createRoot } from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
-
-import "./index.css";
-import App from "./App.jsx";
-
-import { CallRequestProvider } from "./callRequests/context/CallRequestContext";
-import { NotificationProvider } from "./notification/context/NotificationContext";
-import { MeetingProvider } from "./meetings/context/MeetingContext";
-
-createRoot(document.getElementById("root")).render(
-
-  <StrictMode>
-
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
     <BrowserRouter>
-
-      <NotificationProvider>
-
-        <CallRequestProvider>
-
-          <MeetingProvider>
-
-            <App />
-
-          </MeetingProvider>
-
-        </CallRequestProvider>
-
-      </NotificationProvider>
-
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </BrowserRouter>
-
-  </StrictMode>
-
-);
+  </React.StrictMode>
+)

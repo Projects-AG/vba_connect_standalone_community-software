@@ -21,8 +21,9 @@ export class CreateMeetingDto {
   @IsString()
   meetingTime?: string;
 
+  @IsOptional()
   @IsString()
-  host: string;
+  host?: string;
 
   @IsOptional()
   @IsString()

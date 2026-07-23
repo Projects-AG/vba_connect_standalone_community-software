@@ -6,12 +6,21 @@ import {
     Param,
     Post,
     Put,
-    Patch
+    Patch,
+    UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
 import { MeetingService } from '../service/meeting.service';
 import { CreateMeetingDto } from '../dto/create-meeting.dto';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 
+type AuthUser = { id: string; name: string; email: string };
+
+@ApiTags('Meeting')
+@ApiBearerAuth()
+@UseGuards(AuthGuard('jwt'))
 @Controller('meeting')
 export class MeetingController {
 
@@ -22,8 +31,12 @@ export class MeetingController {
     @Post('create')
     createMeeting(
         @Body() dto: CreateMeetingDto,
+        @CurrentUser() user: AuthUser,
     ) {
-        return this.meetingService.createMeeting(dto);
+        return this.meetingService.createMeeting({
+            ...dto,
+            host: dto.host || user.name,
+        });
     }
 
     @Get()
@@ -85,22 +98,24 @@ export class MeetingController {
     @Post(':meetingId/join')
     joinMeeting(
         @Param('meetingId') meetingId: string,
-        @Body('participant') participant: string,
+        @CurrentUser() user: AuthUser,
+        @Body('participant') participant?: string,
     ) {
         return this.meetingService.joinMeeting(
             meetingId,
-            participant,
+            participant || user.name,
         );
     }
 
     @Post(':meetingId/leave')
     leaveMeeting(
         @Param('meetingId') meetingId: string,
-        @Body('participant') participant: string,
+        @CurrentUser() user: AuthUser,
+        @Body('participant') participant?: string,
     ) {
         return this.meetingService.leaveMeeting(
             meetingId,
-            participant,
+            participant || user.name,
         );
     }
 
@@ -116,22 +131,24 @@ export class MeetingController {
     @Post(':meetingId/token')
     generateToken(
         @Param('meetingId') meetingId: string,
-        @Body('participant') participant: string,
+        @CurrentUser() user: AuthUser,
+        @Body('participant') participant?: string,
     ) {
         return this.meetingService.generateToken(
             meetingId,
-            participant,
+            participant || user.name,
         );
     }
 
     @Post(':meetingId/connect')
     connectMeeting(
         @Param('meetingId') meetingId: string,
-        @Body('participant') participant: string,
+        @CurrentUser() user: AuthUser,
+        @Body('participant') participant?: string,
     ) {
         return this.meetingService.connectMeeting(
             meetingId,
-            participant,
+            participant || user.name,
         );
     }
 }

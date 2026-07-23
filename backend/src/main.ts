@@ -28,11 +28,14 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
 
+  const corsOrigins = (process.env.CORS_ORIGINS ??
+    'http://localhost:5173,http://localhost:5174')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
   app.enableCors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-    ],
+    origin: corsOrigins,
     credentials: true,
   });
 
@@ -50,7 +53,10 @@ async function bootstrap() {
       'Reusable Video Communication Service powered by NestJS + LiveKit OSS',
     )
     .setVersion('1.0.0')
+    .addBearerAuth()
     .addTag('Video')
+    .addTag('Auth')
+    .addTag('Meeting')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

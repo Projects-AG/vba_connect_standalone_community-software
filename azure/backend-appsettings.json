@@ -1,0 +1,37 @@
+[
+  {
+    "name": "PORT",
+    "value": "8080",
+    "slotSetting": false
+  },
+  {
+    "name": "WEBSITES_PORT",
+    "value": "8080",
+    "slotSetting": false
+  },
+  {
+    "name": "CORS_ORIGINS",
+    "value": "https://vba691-project-loop.azurewebsites.net",
+    "slotSetting": false
+  },
+  {
+    "name": "LIVEKIT_HOST",
+    "value": "http://127.0.0.1:7880",
+    "slotSetting": false
+  },
+  {
+    "name": "LIVEKIT_API_KEY",
+    "value": "devkey",
+    "slotSetting": false
+  },
+  {
+    "name": "LIVEKIT_API_SECRET",
+    "value": "myverylongsecretkey12345678901234567890",
+    "slotSetting": false
+  },
+  {
+    "name": "DOCKER_REGISTRY_SERVER_URL",
+    "value": "https://index.docker.io/v1/",
+    "slotSetting": false
+  }
+]

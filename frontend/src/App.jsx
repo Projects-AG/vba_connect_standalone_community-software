@@ -1,256 +1,86 @@
-// import { useState } from "react";
-
-// import VideoDemo from "./video/pages/VideoDemo";
-// import NotificationDemo from "./notification/pages/NotificationDemo";
-
-// export default function App() {
-
-//   const [activeDemo, setActiveDemo] = useState("video");
-
-//   return (
-//     <div className="min-h-screen bg-gray-100">
-
-//       <div className="flex justify-center gap-4 py-4 bg-white shadow">
-
-//         <button
-//           onClick={() => setActiveDemo("video")}
-//           className={`px-6 py-2 rounded-lg font-semibold transition ${activeDemo === "video"
-//             ? "bg-blue-600 text-white"
-//             : "bg-gray-200 hover:bg-gray-300"
-//             }`}
-//         >
-//           🎥 Video Demo
-//         </button>
-
-//         <button
-//           onClick={() => setActiveDemo("notification")}
-//           className={`px-6 py-2 rounded-lg font-semibold transition ${activeDemo === "notification"
-//             ? "bg-green-600 text-white"
-//             : "bg-gray-200 hover:bg-gray-300"
-//             }`}
-//         >
-//           🔔 Notification Demo
-//         </button>
-
-//       </div>
-
-//       {activeDemo === "video" ? (
-//         <VideoDemo />
-//       ) : (
-//         <NotificationDemo />
-//       )}
-
-//     </div>
-//   );
-
-// // }
-// import { useState, useEffect } from "react";
-// import {
-//   Routes,
-//   Route,
-// } from "react-router-dom";
-// import JoinMeetingPage from "./meetings/pages/JoinMeetingPage";
-// import VideoDemo from "./video/pages/VideoDemo";
-// import { useMeetingContext } from "./meetings/context/MeetingContext";
-// import NotificationDemo from "./notification/pages/NotificationDemo";
-// import { LeadershipDirectory } from "./leadership";
-// import { CallRequestDashboard } from "./callRequests";
-
-// export default function App() {
-
-//   const { meeting } = useMeetingContext();
-//   const [activeDemo, setActiveDemo] = useState("leadership");
-//   useEffect(() => {
-
-//     if (meeting) {
-
-//       setActiveDemo("video");
-
-//     }
-
-//   }, [meeting]);
-
-//   return (
-//     <div className="min-h-screen bg-gray-100">
-
-//       <div className="flex flex-wrap justify-center gap-4 py-4 bg-white shadow">
-
-//         <button
-//           onClick={() => setActiveDemo("video")}
-//           className={`px-6 py-2 rounded-lg font-semibold transition ${activeDemo === "video"
-//             ? "bg-blue-600 text-white"
-//             : "bg-gray-200 hover:bg-gray-300"
-//             }`}
-//         >
-//           🎥 Video Demo
-//         </button>
-
-//         <button
-//           onClick={() => setActiveDemo("notification")}
-//           className={`px-6 py-2 rounded-lg font-semibold transition ${activeDemo === "notification"
-//             ? "bg-green-600 text-white"
-//             : "bg-gray-200 hover:bg-gray-300"
-//             }`}
-//         >
-//           🔔 Notification Demo
-//         </button>
-
-//         <button
-//           onClick={() => setActiveDemo("leadership")}
-//           className={`px-6 py-2 rounded-lg font-semibold transition ${activeDemo === "leadership"
-//             ? "bg-purple-600 text-white"
-//             : "bg-gray-200 hover:bg-gray-300"
-//             }`}
-//         >
-//           👥 Leadership Directory
-//         </button>
-
-//         <button
-//           onClick={() => setActiveDemo("call")}
-//           className={`px-6 py-2 rounded-lg font-semibold transition ${activeDemo === "call"
-//             ? "bg-red-600 text-white"
-//             : "bg-gray-200 hover:bg-gray-300"
-//             }`}
-//         >
-//           📞 Call Requests
-//         </button>
-
-//       </div>
-
-//       {activeDemo === "video" && <VideoDemo />}
-
-//       {activeDemo === "notification" && <NotificationDemo />}
-
-//       {activeDemo === "leadership" && <LeadershipDirectory />}
-
-//       {activeDemo === "call" && <CallRequestDashboard />}
-
-//     </div>
-//   );
-
-// }
-
-
-import { useState, useEffect } from "react";
-import {
-  Routes,
-  Route,
-} from "react-router-dom";
-
-import VideoDemo from "./video/pages/VideoDemo";
-import NotificationDemo from "./notification/pages/NotificationDemo";
-import MeetingDashboard from "./meetings/pages/MeetingDashboard";
-import JoinMeetingPage from "./meetings/pages/JoinMeetingPage";
-import { LeadershipDirectory } from "./leadership";
-import { CallRequestDashboard } from "./callRequests";
-import { useMeetingContext } from "./meetings/context/MeetingContext";
+import { Routes, Route, Navigate } from 'react-router-dom'
+import Dashboard from './pages/Dashboard'
+import Posts from './pages/Posts'
+import CallsHub from './pages/CallsHub'
+import ActiveCall from './pages/ActiveCall'
+import StubView from './pages/StubView'
+import Login from './pages/Login'
+import Register from './pages/Register'
+import JoinMeeting from './pages/JoinMeeting'
+import ProtectedRoute from './auth/ProtectedRoute'
 
 export default function App() {
-
-  const { meeting } = useMeetingContext();
-
-  const [activeDemo, setActiveDemo] = useState("leadership");
-
-  useEffect(() => {
-
-    if (meeting) {
-
-      setActiveDemo("video");
-
-    }
-
-  }, [meeting]);
-
   return (
-
     <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
 
-      {/* Home */}
-
-      <Route
-        path="/"
-        element={
-
-          <div className="min-h-screen bg-gray-100">
-
-            <div className="flex flex-wrap justify-center gap-4 py-4 bg-white shadow">
-
-              <button
-                onClick={() => setActiveDemo("video")}
-                className={`px-6 py-2 rounded-lg font-semibold transition ${activeDemo === "video"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-200 hover:bg-gray-300"
-                  }`}
-              >
-                🎥 Video Demo
-              </button>
-
-              <button
-                onClick={() => setActiveDemo("notification")}
-                className={`px-6 py-2 rounded-lg font-semibold transition ${activeDemo === "notification"
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-200 hover:bg-gray-300"
-                  }`}
-              >
-                🔔 Notification Demo
-              </button>
-
-              <button
-                onClick={() => setActiveDemo("leadership")}
-                className={`px-6 py-2 rounded-lg font-semibold transition ${activeDemo === "leadership"
-                  ? "bg-purple-600 text-white"
-                  : "bg-gray-200 hover:bg-gray-300"
-                  }`}
-              >
-                👥 Leadership Directory
-              </button>
-
-              <button
-                onClick={() => setActiveDemo("call")}
-                className={`px-6 py-2 rounded-lg font-semibold transition ${activeDemo === "call"
-                  ? "bg-red-600 text-white"
-                  : "bg-gray-200 hover:bg-gray-300"
-                  }`}
-              >
-                📞 Call Requests
-              </button>
-
-              <button
-                onClick={() => setActiveDemo("meeting")}
-                className={`px-6 py-2 rounded-lg font-semibold transition ${activeDemo === "meeting"
-                  ? "bg-indigo-600 text-white"
-                  : "bg-gray-200 hover:bg-gray-300"
-                  }`}
-              >
-                📅 Meetings
-              </button>
-
-            </div>
-
-            {activeDemo === "video" && <VideoDemo />}
-
-            {activeDemo === "notification" && <NotificationDemo />}
-
-            {activeDemo === "leadership" && <LeadershipDirectory />}
-
-            {activeDemo === "call" && <CallRequestDashboard />}
-
-            {activeDemo === "meeting" && <MeetingDashboard />}
-
-          </div>
-
-        }
-      />
-
-      {/* Join Meeting */}
-
+      <Route path="/" element={<Navigate to="/teams" replace />} />
       <Route
         path="/join/:meetingId"
-        element={<JoinMeetingPage />}
+        element={
+          <ProtectedRoute>
+            <JoinMeeting />
+          </ProtectedRoute>
+        }
       />
-
+      <Route
+        path="/teams"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/posts"
+        element={
+          <ProtectedRoute>
+            <Posts />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/calls"
+        element={
+          <ProtectedRoute>
+            <CallsHub />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/calls/active"
+        element={
+          <ProtectedRoute>
+            <ActiveCall />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/activity"
+        element={
+          <ProtectedRoute>
+            <StubView icon="notifications_active" title="Recent Activity" subtitle="Stay updated on all team movements." />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/chat"
+        element={
+          <ProtectedRoute>
+            <StubView icon="chat_bubble" title="Chat Workspace" subtitle="Your direct messages and group chats will appear here." />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/calendar"
+        element={
+          <ProtectedRoute>
+            <StubView icon="calendar_month" title="Calendar" subtitle="Schedule and sync your meetings here." />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="*" element={<Navigate to="/teams" replace />} />
     </Routes>
-
-  );
-
+  )
 }
