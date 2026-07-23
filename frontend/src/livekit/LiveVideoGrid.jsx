@@ -22,7 +22,7 @@ export default function LiveVideoGrid({
             <ParticipantTile />
 
             {/* AI Summary Tile */}
-            <div className="relative rounded-xl overflow-hidden bg-primary-container p-6 flex flex-col justify-between shadow-lg ring-1 ring-primary/20">
+            {/* <div className="relative rounded-xl overflow-hidden bg-primary-container p-6 flex flex-col justify-between shadow-lg ring-1 ring-primary/20">
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
                         <span
@@ -54,7 +54,7 @@ export default function LiveVideoGrid({
                         </span>
                     </div>
                 </div>
-            </div>
+            </div> */}
 
             {/* Camera Off Tile */}
             {!cameraOn && (

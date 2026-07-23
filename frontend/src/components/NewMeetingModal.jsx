@@ -2,14 +2,7 @@ import { useState } from 'react'
 import { contacts } from '../data/mockData'
 import { meetingApi } from "../services/meetingApi";
 import { useAuth } from '../auth/AuthContext'
-/**
- * NewMeetingModal
- * props:
- *  - open: boolean
- *  - onClose: () => void
- *  - onStartInstant: (meeting) => void   // fired for "Meet Now"
- *  - onSchedule: (meeting) => void       // fired for "Schedule"
- */
+
 export default function NewMeetingModal({ open, onClose, onStartInstant, onSchedule }) {
   const { user } = useAuth()
   const [mode, setMode] = useState('instant') // 'instant' | 'schedule'
