@@ -33,6 +33,7 @@ export default function MeetingControls({
   setCameraOn,
   setSharing,
   leaveCall,
+  audioOnly = false,
 }) {
   const {
     toggleMic,
@@ -58,20 +59,24 @@ export default function MeetingControls({
           onClick={toggleMic}
         />
 
-        <ControlButton
-          active={cameraOn}
-          icon={cameraOn ? "videocam" : "videocam_off"}
-          label="Camera"
-          onClick={toggleCamera}
-        />
+        {!audioOnly && (
+          <ControlButton
+            active={cameraOn}
+            icon={cameraOn ? "videocam" : "videocam_off"}
+            label="Camera"
+            onClick={toggleCamera}
+          />
+        )}
 
-        <ControlButton
-          active={!sharing}
-          icon="screen_share"
-          label="Share"
-          onClick={toggleScreenShare}
-          highlighted={sharing}
-        />
+        {!audioOnly && (
+          <ControlButton
+            active={!sharing}
+            icon="screen_share"
+            label="Share"
+            onClick={toggleScreenShare}
+            highlighted={sharing}
+          />
+        )}
 
         <div className="w-px h-8 bg-outline-variant mx-1" />
 

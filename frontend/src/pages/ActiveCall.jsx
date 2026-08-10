@@ -9,6 +9,7 @@ import { contacts as allContacts } from '../data/mockData'
 import { avatarDataUri } from '../utils/avatar'
 import { useAuth } from '../auth/AuthContext'
 import { meetingApi } from '../services/meetingApi'
+import { callsApi } from '../services/callsApi'
 import {
   LiveKitRoom,
 } from "@livekit/components-react";
@@ -54,6 +55,8 @@ export default function ActiveCall() {
   const [token, setToken] = useState(null)
   const [loadError, setLoadError] = useState('')
   const [shareToast, setShareToast] = useState('')
+  const audioOnly = meeting.callMode === 'audio' || state?.callMode === 'audio'
+  const callLogId = meeting.callLogId || state?.callLogId
 
   useEffect(() => {
     if (state?.meetingId) {
@@ -100,9 +103,9 @@ export default function ActiveCall() {
   );
 
   const [muted, setMuted] = useState(false)
-  const [cameraOn, setCameraOn] = useState(true)
+  const [cameraOn, setCameraOn] = useState(() => !(state?.callMode === 'audio'))
   const [sharing, setSharing] = useState(false)
-  const [chatOpen, setChatOpen] = useState(true)
+  const [chatOpen, setChatOpen] = useState(() => state?.callMode !== 'audio')
   const [messages, setMessages] = useState([
     { id: 1, from: 'Elena Rodriguez', mine: false, time: '10:41 AM', text: 'Has anyone checked the latest Figma file for the Q4 deck?' },
     { id: 2, from: 'You', mine: true, time: '10:42 AM', text: 'Yes, I just reviewed it. Looks great!' },
@@ -118,7 +121,16 @@ export default function ActiveCall() {
     setDraft('')
   }
 
-  const leaveCall = () => navigate('/calls')
+  const leaveCall = async () => {
+    if (callLogId) {
+      try {
+        await callsApi.endCall(callLogId)
+      } catch {
+        /* ignore — still leave UI */
+      }
+    }
+    navigate('/calls')
+  }
 
   const copyInviteLink = async () => {
     if (!meeting.meetingId) return
@@ -177,7 +189,7 @@ export default function ActiveCall() {
                 </div>
               )}
             </div>
-            {meeting.meetingId && (
+            {meeting.meetingId && !audioOnly && (
               <button
                 type="button"
                 onClick={copyInviteLink}
@@ -201,17 +213,32 @@ export default function ActiveCall() {
               serverUrl={import.meta.env.VITE_LIVEKIT_URL}
               token={token}
               connect
-              video
+              video={!audioOnly}
               audio
               className="flex-1"
             >
 
               <ParticipantsDebugger />
-              <LiveVideoGrid cameraOn={cameraOn} />
-              {/* <LiveVideoGrid cameraOn={cameraOn} /> */}
+              {audioOnly ? (
+                <div className="flex-1 flex flex-col items-center justify-center gap-4 rounded-2xl bg-surface-container-low">
+                  <div className="w-28 h-28 rounded-full overflow-hidden bg-secondary-container flex items-center justify-center">
+                    <img
+                      src={avatarDataUri(meeting.peerName || meeting.meetingTitle || 'Call', meeting.meetingId || 'audio')}
+                      alt=""
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <p className="font-headline-lg text-headline-lg text-on-surface">
+                    {meeting.peerName || meeting.meetingTitle || 'Audio call'}
+                  </p>
+                  <p className="text-body-sm text-on-surface-variant">Audio call in progress</p>
+                </div>
+              ) : (
+                <LiveVideoGrid cameraOn={cameraOn} />
+              )}
 
               {/* Right Sidebar: Chat */}
-              {chatOpen && (
+              {chatOpen && !audioOnly && (
                 <aside className="w-80 bg-surface-container-lowest rounded-2xl flex flex-col shadow-xl ring-1 ring-outline-variant/10 animate-content-entrance">
                   {/* <div className="p-4 border-b border-outline-variant flex justify-between items-center">
                     <h2 className="font-headline-md text-headline-md font-bold">In-call Chat</h2>
@@ -291,6 +318,7 @@ export default function ActiveCall() {
                 setCameraOn={setCameraOn}
                 setSharing={setSharing}
                 leaveCall={leaveCall}
+                audioOnly={audioOnly}
               />
             </LiveKitRoom>
           )}

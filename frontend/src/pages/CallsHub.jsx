@@ -1,326 +1,295 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import NavRail from '../components/NavRail'
 import TopHeader from '../components/TopHeader'
-import NewMeetingModal from '../components/NewMeetingModal'
-import { contacts, teams, recentCalls } from '../data/mockData'
-import { meetingApi } from '../services/meetingApi'
-import { useAuth } from '../auth/AuthContext'
+import { chatApi } from '../services/chatApi'
+import { callsApi } from '../services/callsApi'
+import { avatarDataUri } from '../utils/avatar'
+
+function statusIcon(item) {
+  if (item.status === 'missed') return 'call_missed'
+  if (item.direction === 'outgoing') return 'call_made'
+  return 'call_received'
+}
+
+function statusLabel(item) {
+  if (item.status === 'missed') return 'Missed'
+  if (item.status === 'ringing') return item.direction === 'outgoing' ? 'Calling…' : 'Incoming'
+  if (item.status === 'cancelled') return 'Cancelled'
+  if (item.status === 'answered' || item.status === 'ended') {
+    if (item.durationSeconds > 0) {
+      const m = Math.floor(item.durationSeconds / 60)
+      const s = item.durationSeconds % 60
+      return `${m}m ${String(s).padStart(2, '0')}s`
+    }
+    return item.direction === 'outgoing' ? 'Outgoing' : 'Incoming'
+  }
+  return item.status
+}
+
+function formatWhen(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const now = new Date()
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  if (sameDay) return `Today, ${time}`
+  return `${d.toLocaleDateString([], { month: 'short', day: 'numeric' })}, ${time}`
+}
 
 export default function CallsHub() {
   const navigate = useNavigate()
-  const { user } = useAuth()
-  const [modalOpen, setModalOpen] = useState(false)
-  const [scheduled, setScheduled] = useState([])
-  const [toast, setToast] = useState(null)
+  const [users, setUsers] = useState([])
+  const [history, setHistory] = useState([])
+  const [incoming, setIncoming] = useState([])
+  const [query, setQuery] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [starting, setStarting] = useState(false)
+  const [toast, setToast] = useState(null)
 
-  const scheduleMeeting = (meeting) => {
-    setModalOpen(false)
-
-    setScheduled((prev) => [
-      {
-        ...meeting,
-        id: meeting.meetingId,
-      },
-      ...prev,
-    ])
-
-    const path = meeting.meetingLink || `/join/${meeting.meetingId}`
-    const shareUrl = `${window.location.origin}${path}`
-    setToast(`Scheduled — invite: ${shareUrl}`)
-    try {
-      navigator.clipboard.writeText(shareUrl)
-    } catch {
-      /* ignore */
-    }
-    setTimeout(() => setToast(null), 6000)
+  const showToast = (message) => {
+    setToast(message)
+    setTimeout(() => setToast(null), 4000)
   }
 
-  const copyInvite = async (meeting) => {
-    const path = meeting.meetingLink || `/join/${meeting.meetingId}`
-    const shareUrl = `${window.location.origin}${path}`
+  const load = useCallback(async () => {
+    setError('')
     try {
-      await navigator.clipboard.writeText(shareUrl)
-      setToast('Invite link copied')
-      setTimeout(() => setToast(null), 3000)
-    } catch {
-      setToast(shareUrl)
-      setTimeout(() => setToast(null), 5000)
+      const [usersRes, historyRes, incomingRes] = await Promise.all([
+        chatApi.listUsers(),
+        callsApi.listHistory(),
+        callsApi.listIncoming(),
+      ])
+      setUsers(usersRes.data || [])
+      setHistory(historyRes.data || [])
+      setIncoming(incomingRes.data || [])
+    } catch (err) {
+      setError(err.message || 'Unable to load calls')
+    } finally {
+      setLoading(false)
     }
-  }
+  }, [])
 
-  const goToActiveCall = (meeting) => {
-    const path = meeting.meetingLink || `/join/${meeting.meetingId}`
-    const shareUrl = `${window.location.origin}${path}`
-    try {
-      navigator.clipboard.writeText(shareUrl)
-      setToast(`Invite link copied — ${shareUrl}`)
-      setTimeout(() => setToast(null), 5000)
-    } catch {
-      /* ignore */
-    }
+  useEffect(() => {
+    load()
+    const id = setInterval(load, 4000)
+    return () => clearInterval(id)
+  }, [load])
 
+  const filteredUsers = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return users
+    return users.filter(
+      (u) =>
+        u.name?.toLowerCase().includes(q) ||
+        u.email?.toLowerCase().includes(q),
+    )
+  }, [users, query])
+
+  const goToAudioCall = (call) => {
     navigate('/calls/active', {
       state: {
-        ...meeting,
-        meetingId: meeting.meetingId,
-        roomName: meeting.roomName,
-        meetingLink: meeting.meetingLink,
+        meetingId: call.meetingId,
+        roomName: call.roomName,
+        meetingTitle: call.meetingTitle || `Call with ${call.peerName}`,
+        callType: '1:1',
+        callMode: 'audio',
+        callLogId: call.id,
+        peerName: call.peerName,
+        participants: [],
       },
     })
   }
 
-  const startInstant = (meeting) => {
-    setModalOpen(false)
-    goToActiveCall(meeting)
-  }
-
-  const createOneToOne = async ({ title, otherName }) => {
-    if (starting) return
+  const placeCall = async (peerUserId) => {
+    if (starting || !peerUserId) return
     setStarting(true)
     try {
-      const hostName = user?.name || 'Host'
-      const response = await meetingApi.createMeeting({
-        roomName: crypto.randomUUID(),
-        meetingTitle: title || otherName || '1:1 Call',
-        meetingType: 'instant',
-        callType: '1:1',
-        meetingDate: '',
-        meetingTime: '',
-        host: hostName,
-        participants: [hostName, otherName].filter(Boolean),
-      })
-      if (!response.success) {
-        setToast(response.message || 'Unable to start call')
-        setTimeout(() => setToast(null), 4000)
+      const res = await callsApi.startCall(peerUserId)
+      if (!res.success) {
+        showToast(res.message || 'Unable to start call')
         return
       }
-      goToActiveCall(response.data)
+      goToAudioCall(res.data)
     } catch (err) {
-      setToast(err.message || 'Unable to start call')
-      setTimeout(() => setToast(null), 4000)
+      showToast(err.message || 'Unable to start call')
     } finally {
       setStarting(false)
     }
   }
 
-  const quickCall1to1 = (contact) => {
-    createOneToOne({ title: contact.name, otherName: contact.name })
-  }
-
-  const quickCallGroup = async (team) => {
+  const answerIncoming = async (call) => {
     if (starting) return
     setStarting(true)
     try {
-      const hostName = user?.name || 'Host'
-      const members = contacts
-        .slice(0, team.members > 4 ? 5 : team.members)
-        .map((c) => c.name)
-      const response = await meetingApi.createMeeting({
-        roomName: crypto.randomUUID(),
-        meetingTitle: team.name,
-        meetingType: 'instant',
-        callType: 'group',
-        meetingDate: '',
-        meetingTime: '',
-        host: hostName,
-        participants: [hostName, ...members],
-      })
-      if (!response.success) {
-        setToast(response.message || 'Unable to start call')
-        setTimeout(() => setToast(null), 4000)
+      const res = await callsApi.answerCall(call.id)
+      if (!res.success) {
+        showToast(res.message || 'Unable to answer')
         return
       }
-      goToActiveCall(response.data)
+      goToAudioCall({ ...res.data, meetingTitle: `Call with ${call.peerName}` })
     } catch (err) {
-      setToast(err.message || 'Unable to start call')
-      setTimeout(() => setToast(null), 4000)
+      showToast(err.message || 'Unable to answer')
     } finally {
       setStarting(false)
     }
   }
 
-  const recallRecent = (rc) => {
-    createOneToOne({ title: rc.name, otherName: rc.name })
+  const callback = (item) => {
+    if (item.peerUserId) placeCall(item.peerUserId)
   }
 
   return (
     <div className="bg-surface">
-      <TopHeader searchPlaceholder="Search people, teams, or past calls" />
+      <TopHeader searchPlaceholder="Search people" />
       <div className="flex h-screen pt-12">
         <NavRail withTopOffset />
         <main className="ml-20 flex-1 flex flex-col overflow-hidden">
-          {/* Header */}
           <header className="flex justify-between items-center px-8 h-16 w-full bg-surface/80 backdrop-blur-md border-b border-outline-variant/30">
-            <h1 className="font-headline-lg text-headline-lg font-black text-on-background tracking-tight">Calls</h1>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setModalOpen(true)}
-                disabled={starting}
-                className="flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary rounded-xl font-headline-md shadow-lg shadow-primary/20 hover:bg-primary-container active:scale-[0.98] transition-all disabled:opacity-60"
-              >
-                <span className="material-symbols-outlined text-[18px]">add</span>
-                New Meeting
-              </button>
-            </div>
+            <h1 className="font-headline-lg text-headline-lg font-black text-on-background tracking-tight">
+              Calls
+            </h1>
           </header>
 
           <div className="flex-1 overflow-y-auto custom-scrollbar">
-            <div className="max-w-6xl mx-auto px-8 py-8 space-y-10">
-              {/* Quick actions */}
-              <div className="grid grid-cols-2 gap-4 animate-content-entrance">
-                <button
-                  onClick={() => setModalOpen(true)}
-                  className="flex items-center gap-4 p-6 bg-primary-container/10 border border-primary/20 rounded-2xl hover-lift text-left"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-on-primary">
-                    <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
-                  </div>
-                  <div>
-                    <p className="font-headline-md text-headline-md text-on-surface">Meet Now</p>
-                    <p className="text-body-sm text-on-surface-variant">Start an instant 1:1 or group call</p>
-                  </div>
-                </button>
-                <button
-                  onClick={() => setModalOpen(true)}
-                  className="flex items-center gap-4 p-6 bg-surface-container-lowest border border-outline-variant/30 rounded-2xl hover-lift text-left"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-secondary-container flex items-center justify-center text-on-secondary-container">
-                    <span className="material-symbols-outlined">event</span>
-                  </div>
-                  <div>
-                    <p className="font-headline-md text-headline-md text-on-surface">Schedule Meeting</p>
-                    <p className="text-body-sm text-on-surface-variant">Plan ahead and invite your team</p>
-                  </div>
-                </button>
-              </div>
-
-              {/* Scheduled meetings */}
-              {scheduled.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="font-headline-md text-headline-md text-on-surface">Upcoming Scheduled Meetings</h3>
-                  <div className="space-y-3">
-                    {scheduled.map((m) => (
-                      <div key={m.id} className="flex items-center justify-between p-4 bg-surface-container-lowest border border-outline-variant/30 rounded-xl card-lift gap-3">
-                        <div className="flex items-center gap-4 min-w-0">
-                          <div className="w-10 h-10 rounded-lg bg-secondary-container flex items-center justify-center text-on-secondary-container flex-shrink-0">
-                            <span className="material-symbols-outlined text-[20px]">event_available</span>
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-headline-md text-headline-md text-on-surface truncate">
-                              {m.meetingTitle || m.title}
-                            </p>
-                            <p className="text-body-sm text-on-surface-variant">
-                              {m.meetingDate || m.date} • {m.meetingTime || m.time} •{' '}
-                              {m.callType === '1:1' ? 'One-to-one' : `Group (${m.participants?.length || 0})`}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <button
-                            onClick={() => copyInvite(m)}
-                            className="px-3 py-2 border border-outline-variant rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-low transition-colors"
-                            title="Copy invite link"
-                          >
-                            <span className="material-symbols-outlined text-[18px]">link</span>
-                          </button>
-                          <button
-                            onClick={() => navigate('/calls/active', { state: m })}
-                            className="px-4 py-2 border border-outline-variant rounded-lg font-label-md text-label-md text-primary hover:bg-primary/5 transition-colors"
-                          >
-                            Join
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+            <div className="max-w-3xl mx-auto px-8 py-8 space-y-10">
+              {error && (
+                <div className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</div>
               )}
 
-              {/* One-to-one contacts */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-headline-md text-headline-md text-on-surface">One-to-One</h3>
-                  <span className="text-body-sm text-on-surface-variant">
-                    {starting ? 'Starting…' : 'Tap to call instantly'}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {contacts.map((c) => (
-                    <button
-                      key={c.id}
-                      onClick={() => quickCall1to1(c)}
-                      disabled={starting}
-                      className="group flex flex-col items-center gap-2 p-4 bg-surface-container-lowest border border-outline-variant/30 rounded-xl card-lift disabled:opacity-60"
-                    >
-                      <div className="relative w-14 h-14 rounded-full overflow-hidden bg-surface-container-high flex items-center justify-center">
-                        {c.initials ? (
-                          <span className="text-headline-md font-headline-md text-on-surface-variant">{c.initials}</span>
-                        ) : (
-                          <img src={c.avatar} className="w-full h-full object-cover" alt={c.name} />
-                        )}
-                        <span
-                          className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-surface-container-lowest ${c.status === 'online' ? 'bg-green-500' : c.status === 'away' ? 'bg-yellow-500' : 'bg-outline-variant'
-                            }`}
-                        />
-                      </div>
-                      <p className="text-body-sm text-on-surface text-center leading-tight">{c.name}</p>
-                      <span className="material-symbols-outlined text-primary text-[18px] opacity-0 group-hover:opacity-100 transition-opacity">call</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Group / team calls */}
-              <div className="space-y-4">
-                <h3 className="font-headline-md text-headline-md text-on-surface">Group Calls</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {teams.map((t) => (
-                    <button
-                      key={t.id}
-                      onClick={() => quickCallGroup(t)}
-                      disabled={starting}
-                      className="flex items-center gap-4 p-5 bg-surface-container-lowest border border-outline-variant/30 rounded-2xl card-lift text-left disabled:opacity-60"
-                    >
-                      <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-on-primary flex-shrink-0">
-                        <span className="material-symbols-outlined">{t.icon}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-headline-md text-headline-md text-on-surface truncate">{t.name}</p>
-                        <p className="text-body-sm text-on-surface-variant truncate">{t.members} members</p>
-                      </div>
-                      <span className="material-symbols-outlined text-primary">call</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Recent calls */}
-              <div className="space-y-4 pb-8">
-                <h3 className="font-headline-md text-headline-md text-on-surface">Recent</h3>
-                <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl overflow-hidden">
-                  {recentCalls.map((rc, i) => (
+              {/* Incoming ringing */}
+              {incoming.length > 0 && (
+                <div className="space-y-3">
+                  <h3 className="font-headline-md text-headline-md text-on-surface">Incoming</h3>
+                  {incoming.map((c) => (
                     <div
-                      key={rc.id}
-                      className={`flex items-center justify-between px-5 py-4 hover:bg-surface-container-low transition-colors ${i !== recentCalls.length - 1 ? 'border-b border-outline-variant/20' : ''
-                        }`}
+                      key={c.id}
+                      className="flex items-center justify-between gap-3 p-4 rounded-xl border border-primary/30 bg-primary/5"
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="material-symbols-outlined text-on-surface-variant">
-                          {rc.type === '1:1' ? 'call' : 'groups'}
-                        </span>
-                        <div>
-                          <p className="text-body-md text-on-surface">{rc.name}</p>
-                          <p className="text-body-sm text-outline">{rc.time} • {rc.duration}</p>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center overflow-hidden flex-shrink-0">
+                          <img
+                            src={avatarDataUri(c.peerName, c.peerUserId)}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-headline-md text-headline-md text-on-surface truncate">
+                            {c.peerName}
+                          </p>
+                          <p className="text-body-sm text-on-surface-variant">Incoming call…</p>
                         </div>
                       </div>
                       <button
-                        onClick={() => recallRecent(rc)}
+                        type="button"
                         disabled={starting}
-                        className="w-9 h-9 flex items-center justify-center rounded-full text-primary hover:bg-primary/10 transition-colors disabled:opacity-60"
+                        onClick={() => answerIncoming(c)}
+                        className="px-4 py-2 bg-primary text-on-primary rounded-lg font-label-md disabled:opacity-60"
                       >
-                        <span className="material-symbols-outlined text-[20px]">call</span>
+                        Answer
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Search people */}
+              <div className="space-y-4">
+                <h3 className="font-headline-md text-headline-md text-on-surface">People</h3>
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search by name or email"
+                  className="w-full px-4 py-3 rounded-xl border border-outline-variant/40 bg-surface-container-lowest font-body-md text-body-md focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+                {loading && (
+                  <p className="text-body-sm text-on-surface-variant">Loading…</p>
+                )}
+                {!loading && filteredUsers.length === 0 && (
+                  <p className="text-body-sm text-on-surface-variant">No people found.</p>
+                )}
+                <div className="space-y-2">
+                  {filteredUsers.map((u) => (
+                    <div
+                      key={u.id}
+                      className="flex items-center justify-between gap-3 p-3 rounded-xl border border-outline-variant/30 bg-surface-container-lowest"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-full overflow-hidden bg-surface-container-high flex-shrink-0">
+                          <img
+                            src={avatarDataUri(u.name, u.id)}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-label-md text-on-surface truncate">{u.name}</p>
+                          <p className="text-body-sm text-on-surface-variant truncate">{u.email}</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={starting}
+                        onClick={() => placeCall(u.id)}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-outline-variant text-primary hover:bg-primary/5 font-label-md disabled:opacity-60"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">call</span>
+                        Call
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* History */}
+              <div className="space-y-4 pb-8">
+                <h3 className="font-headline-md text-headline-md text-on-surface">History</h3>
+                {!loading && history.length === 0 && (
+                  <p className="text-body-sm text-on-surface-variant">No calls yet.</p>
+                )}
+                <div className="space-y-2">
+                  {history.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between gap-3 p-3 rounded-xl border border-outline-variant/30 bg-surface-container-lowest"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span
+                          className={`material-symbols-outlined text-[22px] flex-shrink-0 ${
+                            item.status === 'missed' ? 'text-error' : 'text-on-surface-variant'
+                          }`}
+                        >
+                          {statusIcon(item)}
+                        </span>
+                        <div className="min-w-0">
+                          <p
+                            className={`font-label-md truncate ${
+                              item.status === 'missed' ? 'text-error' : 'text-on-surface'
+                            }`}
+                          >
+                            {item.peerName}
+                          </p>
+                          <p className="text-body-sm text-on-surface-variant truncate">
+                            {statusLabel(item)}
+                            {item.startedAt ? ` • ${formatWhen(item.startedAt)}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={starting || !item.peerUserId}
+                        onClick={() => callback(item)}
+                        className="px-3 py-2 rounded-lg border border-outline-variant text-primary hover:bg-primary/5 font-label-md disabled:opacity-60"
+                        title="Call back"
+                      >
+                        <span className="material-symbols-outlined text-[18px]">call</span>
                       </button>
                     </div>
                   ))}
@@ -330,16 +299,8 @@ export default function CallsHub() {
           </div>
         </main>
 
-        <NewMeetingModal
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
-          onStartInstant={startInstant}
-          onSchedule={scheduleMeeting}
-        />
-
-        {/* Toast */}
         {toast && (
-          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[110] bg-inverse-surface text-inverse-on-surface px-6 py-3 rounded-xl shadow-2xl text-body-md animate-content-entrance max-w-[90vw] truncate">
+          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[110] bg-inverse-surface text-inverse-on-surface px-6 py-3 rounded-xl shadow-2xl text-body-md max-w-[90vw] truncate">
             {toast}
           </div>
         )}

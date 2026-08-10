@@ -10,7 +10,6 @@ import '@fullcalendar/react/themes/monarch/theme.css'
 import '@fullcalendar/react/themes/monarch/palettes/blue.css'
 import NavRail from '../components/NavRail'
 import TopHeader from '../components/TopHeader'
-import NewMeetingModal from '../components/NewMeetingModal'
 import MeetNowModal from '../components/MeetNowModal'
 import { meetingApi } from '../services/meetingApi'
 import './calendar.css'
@@ -55,10 +54,8 @@ export default function Calendar() {
   const [loadError, setLoadError] = useState('')
   const [title, setTitle] = useState('')
   const [toast, setToast] = useState(null)
-  const [modalOpen, setModalOpen] = useState(false)
+  const [comingSoonOpen, setComingSoonOpen] = useState(false)
   const [meetNowOpen, setMeetNowOpen] = useState(false)
-  const [modalMode, setModalMode] = useState('schedule')
-  const [modalDate, setModalDate] = useState('')
 
   const events = useMemo(() => meetingsToEvents(meetings), [meetings])
 
@@ -79,9 +76,9 @@ export default function Calendar() {
     loadMeetings()
   }, [loadMeetings])
 
-  const showToast = (message, ms = 5000) => {
+  const showToast = (message) => {
     setToast(message)
-    setTimeout(() => setToast(null), ms)
+    setTimeout(() => setToast(null), 4000)
   }
 
   const copyInvite = (meeting) => {
@@ -89,10 +86,10 @@ export default function Calendar() {
     const shareUrl = `${window.location.origin}${path}`
     try {
       navigator.clipboard.writeText(shareUrl)
-      showToast(`Invite link copied — ${shareUrl}`)
     } catch {
-      showToast(shareUrl)
+      /* ignore */
     }
+    return shareUrl
   }
 
   const goToActiveCall = (meeting) => {
@@ -111,22 +108,8 @@ export default function Calendar() {
     setMeetNowOpen(true)
   }
 
-  const openNew = (dateStr = '') => {
-    setModalMode('schedule')
-    setModalDate(dateStr || '')
-    setModalOpen(true)
-  }
-
-  const onStartInstant = (meeting) => {
-    setModalOpen(false)
-    goToActiveCall(meeting)
-  }
-
-  const onSchedule = async (meeting) => {
-    setModalOpen(false)
-    copyInvite(meeting)
-    showToast('Scheduled — invite copied')
-    await loadMeetings()
+  const openComingSoon = () => {
+    setComingSoonOpen(true)
   }
 
   const onMeetNowStart = (meeting) => {
@@ -157,8 +140,8 @@ export default function Calendar() {
       <div className="flex h-screen pt-12">
         <NavRail withTopOffset />
         <main className="ml-20 flex-1 flex flex-col overflow-hidden">
-          <header className="flex flex-wrap items-center justify-between gap-3 px-8 h-auto min-h-16 py-3 w-full bg-surface/80 backdrop-blur-md border-b border-outline-variant/30">
-            <div className="flex items-center gap-2 flex-wrap">
+          <header className="flex justify-between items-center px-8 h-16 w-full bg-surface/80 backdrop-blur-md border-b border-outline-variant/30">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={goToday}
@@ -201,7 +184,7 @@ export default function Calendar() {
               </button>
               <button
                 type="button"
-                onClick={() => openNew()}
+                onClick={openComingSoon}
                 className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-xl font-headline-md shadow-lg shadow-primary/20 hover:bg-primary-container active:scale-[0.98] transition-all"
               >
                 <span className="material-symbols-outlined text-[18px]">add</span>
@@ -223,7 +206,7 @@ export default function Calendar() {
                 headerToolbar={false}
                 height="100%"
                 events={events}
-                dateClick={(info) => openNew(info.dateStr)}
+                dateClick={openComingSoon}
                 eventClick={(info) => {
                   const meeting = info.event.extendedProps?.meeting
                   if (meeting?.meetingId) goToActiveCall(meeting)
@@ -237,15 +220,26 @@ export default function Calendar() {
         </main>
       </div>
 
-      <NewMeetingModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onStartInstant={onStartInstant}
-        onSchedule={onSchedule}
-        initialMode={modalMode}
-        initialDate={modalDate}
-        initialCallType="1:1"
-      />
+      {comingSoonOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-on-background/40 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm bg-surface-container-lowest rounded-2xl shadow-2xl ring-1 ring-outline-variant/20 p-8 text-center">
+            <div className="mx-auto w-12 h-12 rounded-full bg-secondary-container flex items-center justify-center mb-4">
+              <span className="material-symbols-outlined text-on-secondary-container">event</span>
+            </div>
+            <h2 className="font-headline-lg text-headline-lg text-on-surface mb-2">Coming soon</h2>
+            <p className="text-body-sm text-on-surface-variant mb-6">
+              Schedule and new meeting options will be available here soon.
+            </p>
+            <button
+              type="button"
+              onClick={() => setComingSoonOpen(false)}
+              className="px-5 py-2.5 bg-primary text-on-primary rounded-xl font-label-md"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
 
       <MeetNowModal
         open={meetNowOpen}

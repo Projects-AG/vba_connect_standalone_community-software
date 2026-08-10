@@ -12,5 +12,6 @@ import { AuthModule } from '../auth/auth.module';
   imports: [AuthModule, TypeOrmModule.forFeature([MeetingEntity])],
   controllers: [MeetingController],
   providers: [MeetingService, MeetingModel, LivekitModel],
+  exports: [MeetingService],
 })
 export class MeetingModule {}

@@ -6,10 +6,12 @@ import { NotificationModule } from './notifications/notification.module';
 import { MeetingModule } from './meeting/meeting.module';
 import { AuthModule } from './auth/auth.module';
 import { ChatModule } from './chat/chat.module';
+import { CallsModule } from './calls/calls.module';
 import { UserEntity } from './auth/entities/user.entity';
 import { MeetingEntity } from './meeting/entities/meeting.entity';
 import { ConversationEntity } from './chat/entities/conversation.entity';
 import { MessageEntity } from './chat/entities/message.entity';
+import { CallLogEntity } from './calls/entities/call-log.entity';
 
 @Module({
   imports: [
@@ -31,6 +33,7 @@ import { MessageEntity } from './chat/entities/message.entity';
           MeetingEntity,
           ConversationEntity,
           MessageEntity,
+          CallLogEntity,
         ],
         synchronize: config.get<string>('DB_SYNC') !== 'false',
         autoLoadEntities: true,
@@ -41,6 +44,7 @@ import { MessageEntity } from './chat/entities/message.entity';
     NotificationModule,
     MeetingModule,
     ChatModule,
+    CallsModule,
   ],
 })
 export class AppModule {}

@@ -9,6 +9,7 @@ import '@fontsource/inter/800.css'
 import 'material-symbols/outlined.css'
 import "@livekit/components-styles";
 import { AuthProvider } from './auth/AuthContext.jsx'
+import { IncomingCallProvider } from './calls/IncomingCallProvider.jsx'
 import App from './App.jsx'
 import './index.css'
 
@@ -16,7 +17,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <App />
+        <IncomingCallProvider>
+          <App />
+        </IncomingCallProvider>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>
