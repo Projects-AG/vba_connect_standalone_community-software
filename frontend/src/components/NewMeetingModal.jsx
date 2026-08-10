@@ -1,17 +1,47 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { contacts } from '../data/mockData'
 import { meetingApi } from "../services/meetingApi";
 import { useAuth } from '../auth/AuthContext'
 
-export default function NewMeetingModal({ open, onClose, onStartInstant, onSchedule }) {
+/**
+ * NewMeetingModal
+ * props:
+ *  - open: boolean
+ *  - onClose: () => void
+ *  - onStartInstant: (meeting) => void
+ *  - onSchedule: (meeting) => void
+ *  - initialMode?: 'instant' | 'schedule'
+ *  - initialDate?: string (YYYY-MM-DD)
+ *  - initialCallType?: '1:1' | 'group'
+ */
+export default function NewMeetingModal({
+  open,
+  onClose,
+  onStartInstant,
+  onSchedule,
+  initialMode = 'instant',
+  initialDate = '',
+  initialCallType = '1:1',
+}) {
   const { user } = useAuth()
-  const [mode, setMode] = useState('instant') // 'instant' | 'schedule'
-  const [callType, setCallType] = useState('1:1') // '1:1' | 'group'
+  const [mode, setMode] = useState(initialMode)
+  const [callType, setCallType] = useState(initialCallType)
   const [selectedIds, setSelectedIds] = useState([])
   const [title, setTitle] = useState('')
-  const [date, setDate] = useState('')
+  const [date, setDate] = useState(initialDate)
   const [time, setTime] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+    setMode(initialMode || 'instant')
+    setCallType(initialCallType || '1:1')
+    setDate(initialDate || '')
+    setSelectedIds([])
+    setTitle('')
+    setTime('')
+    setSubmitting(false)
+  }, [open, initialMode, initialDate, initialCallType])
 
   if (!open) return null
 
@@ -42,7 +72,10 @@ export default function NewMeetingModal({ open, onClose, onStartInstant, onSched
       meetingDate: date || "",
       meetingTime: time || "",
       host: user?.name || "Host",
-      participants: selectedContacts.map((p) => p.name),
+      participants: [
+        user?.name,
+        ...selectedContacts.map((p) => p.name),
+      ].filter(Boolean),
     };
 
     try {
@@ -68,6 +101,7 @@ export default function NewMeetingModal({ open, onClose, onStartInstant, onSched
       setSubmitting(false);
     }
   };
+
   const reset = () => {
     setMode('instant')
     setCallType('1:1')
@@ -81,7 +115,6 @@ export default function NewMeetingModal({ open, onClose, onStartInstant, onSched
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-on-background/40 backdrop-blur-sm animate-content-entrance">
       <div className="w-full max-w-lg bg-surface-container-lowest rounded-2xl modal-shadow overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-outline-variant/30">
           <h2 className="font-headline-lg text-headline-lg text-on-surface">New Meeting</h2>
           <button
@@ -93,7 +126,6 @@ export default function NewMeetingModal({ open, onClose, onStartInstant, onSched
         </div>
 
         <div className="p-6 space-y-6">
-          {/* Instant vs Schedule toggle */}
           <div className="flex bg-surface-container-low rounded-xl p-1">
             <button
               onClick={() => setMode('instant')}
@@ -113,7 +145,6 @@ export default function NewMeetingModal({ open, onClose, onStartInstant, onSched
             </button>
           </div>
 
-          {/* 1:1 vs Group toggle */}
           <div>
             <p className="font-label-md text-label-md text-on-surface-variant uppercase mb-2">Call Type</p>
             <div className="flex gap-3">
@@ -143,7 +174,6 @@ export default function NewMeetingModal({ open, onClose, onStartInstant, onSched
             </div>
           </div>
 
-          {/* Meeting title (schedule mode only, optional for instant) */}
           {mode === 'schedule' && (
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
@@ -176,7 +206,6 @@ export default function NewMeetingModal({ open, onClose, onStartInstant, onSched
             </div>
           )}
 
-          {/* Contact picker */}
           <div>
             <p className="font-label-md text-label-md text-on-surface-variant uppercase mb-2">
               {callType === '1:1' ? 'Choose a person' : `Choose people (${selectedIds.length} selected)`}
@@ -214,7 +243,6 @@ export default function NewMeetingModal({ open, onClose, onStartInstant, onSched
           </div>
         </div>
 
-        {/* Footer actions */}
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-outline-variant/30 bg-surface-container-low/40">
           <button
             onClick={reset}
@@ -223,9 +251,9 @@ export default function NewMeetingModal({ open, onClose, onStartInstant, onSched
             Cancel
           </button>
           <button
-            disabled={!canSubmit}
+            disabled={!canSubmit || submitting}
             onClick={handleSubmit}
-            className={`px-5 py-2.5 rounded-lg font-headline-md text-headline-md flex items-center gap-2 transition-all active:scale-[0.98] ${canSubmit ? 'bg-primary text-on-primary shadow-lg shadow-primary/20 hover:bg-primary-container' : 'bg-surface-variant text-outline cursor-not-allowed'
+            className={`px-5 py-2.5 rounded-lg font-headline-md text-headline-md flex items-center gap-2 transition-all active:scale-[0.98] ${canSubmit && !submitting ? 'bg-primary text-on-primary shadow-lg shadow-primary/20 hover:bg-primary-container' : 'bg-surface-variant text-outline cursor-not-allowed'
               }`}
           >
             <span className="material-symbols-outlined text-[18px]">

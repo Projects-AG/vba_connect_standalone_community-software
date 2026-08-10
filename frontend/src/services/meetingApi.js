@@ -31,6 +31,13 @@ export const meetingApi = {
     return parseJson(res)
   },
 
+  async listMeetings() {
+    const res = await fetch(`${API_BASE_URL}/meeting`, {
+      headers: authHeaders(),
+    })
+    return parseJson(res)
+  },
+
   async getMeeting(meetingId) {
     const res = await fetch(`${API_BASE_URL}/meeting/${meetingId}`, {
       headers: authHeaders(),
@@ -38,13 +45,20 @@ export const meetingApi = {
     return parseJson(res)
   },
 
-  async generateToken(meetingId, participant) {
+  async generateToken(meetingId) {
     const res = await fetch(`${API_BASE_URL}/meeting/${meetingId}/token`, {
       method: 'POST',
       headers: authHeaders(),
-      body: JSON.stringify({
-        ...(participant ? { participant } : {}),
-      }),
+      body: JSON.stringify({}),
+    })
+    return parseJson(res)
+  },
+
+  async connectMeeting(meetingId) {
+    const res = await fetch(`${API_BASE_URL}/meeting/${meetingId}/connect`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({}),
     })
     return parseJson(res)
   },

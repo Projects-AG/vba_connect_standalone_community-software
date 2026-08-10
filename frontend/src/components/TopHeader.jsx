@@ -1,4 +1,5 @@
 import { useAuth } from '../auth/AuthContext'
+import logo from '../assets/logoBR.png'
 
 export default function TopHeader({ searchPlaceholder = 'Search for files, people, or gists' }) {
   const { user, logout } = useAuth()
@@ -8,8 +9,8 @@ export default function TopHeader({ searchPlaceholder = 'Search for files, peopl
       <div className="flex items-center gap-4">
         <img
           src={logo}
-          alt="Velocity"
-          className="h-14 w-auto object-contain"
+          alt="Project Loop"
+          className="h-10 w-auto object-contain"
         />
 
         <div className="ml-8 relative hidden md:block">

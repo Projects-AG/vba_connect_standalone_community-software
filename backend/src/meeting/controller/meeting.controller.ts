@@ -132,23 +132,15 @@ export class MeetingController {
     generateToken(
         @Param('meetingId') meetingId: string,
         @CurrentUser() user: AuthUser,
-        @Body('participant') participant?: string,
     ) {
-        return this.meetingService.generateToken(
-            meetingId,
-            participant || user.name,
-        );
+        return this.meetingService.generateToken(meetingId, user);
     }
 
     @Post(':meetingId/connect')
     connectMeeting(
         @Param('meetingId') meetingId: string,
         @CurrentUser() user: AuthUser,
-        @Body('participant') participant?: string,
     ) {
-        return this.meetingService.connectMeeting(
-            meetingId,
-            participant || user.name,
-        );
+        return this.meetingService.connectMeeting(meetingId, user);
     }
 }

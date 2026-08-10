@@ -7,6 +7,7 @@ import StubView from './pages/StubView'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import JoinMeeting from './pages/JoinMeeting'
+import Calendar from './pages/Calendar'
 import ProtectedRoute from './auth/ProtectedRoute'
 
 export default function App() {
@@ -76,7 +77,7 @@ export default function App() {
         path="/calendar"
         element={
           <ProtectedRoute>
-            <StubView icon="calendar_month" title="Calendar" subtitle="Schedule and sync your meetings here." />
+            <Calendar />
           </ProtectedRoute>
         }
       />

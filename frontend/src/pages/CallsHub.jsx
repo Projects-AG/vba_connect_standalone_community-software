@@ -4,17 +4,17 @@ import NavRail from '../components/NavRail'
 import TopHeader from '../components/TopHeader'
 import NewMeetingModal from '../components/NewMeetingModal'
 import { contacts, teams, recentCalls } from '../data/mockData'
+import { meetingApi } from '../services/meetingApi'
+import { useAuth } from '../auth/AuthContext'
 
 export default function CallsHub() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [modalOpen, setModalOpen] = useState(false)
   const [scheduled, setScheduled] = useState([])
   const [toast, setToast] = useState(null)
+  const [starting, setStarting] = useState(false)
 
-  // const startInstant = (meeting) => {
-  //   setModalOpen(false)
-  //   navigate('/calls/active', { state: meeting })
-  // }
   const scheduleMeeting = (meeting) => {
     setModalOpen(false)
 
@@ -50,9 +50,7 @@ export default function CallsHub() {
     }
   }
 
-  const startInstant = (meeting) => {
-    setModalOpen(false)
-
+  const goToActiveCall = (meeting) => {
     const path = meeting.meetingLink || `/join/${meeting.meetingId}`
     const shareUrl = `${window.location.origin}${path}`
     try {
@@ -73,12 +71,78 @@ export default function CallsHub() {
     })
   }
 
-  const quickCall1to1 = (contact) => {
-    navigate('/calls/active', { state: { title: contact.name, callType: '1:1', participants: [contact] } })
+  const startInstant = (meeting) => {
+    setModalOpen(false)
+    goToActiveCall(meeting)
   }
 
-  const quickCallGroup = (team) => {
-    navigate('/calls/active', { state: { title: team.name, callType: 'group', participants: contacts.slice(0, team.members > 4 ? 5 : team.members) } })
+  const createOneToOne = async ({ title, otherName }) => {
+    if (starting) return
+    setStarting(true)
+    try {
+      const hostName = user?.name || 'Host'
+      const response = await meetingApi.createMeeting({
+        roomName: crypto.randomUUID(),
+        meetingTitle: title || otherName || '1:1 Call',
+        meetingType: 'instant',
+        callType: '1:1',
+        meetingDate: '',
+        meetingTime: '',
+        host: hostName,
+        participants: [hostName, otherName].filter(Boolean),
+      })
+      if (!response.success) {
+        setToast(response.message || 'Unable to start call')
+        setTimeout(() => setToast(null), 4000)
+        return
+      }
+      goToActiveCall(response.data)
+    } catch (err) {
+      setToast(err.message || 'Unable to start call')
+      setTimeout(() => setToast(null), 4000)
+    } finally {
+      setStarting(false)
+    }
+  }
+
+  const quickCall1to1 = (contact) => {
+    createOneToOne({ title: contact.name, otherName: contact.name })
+  }
+
+  const quickCallGroup = async (team) => {
+    if (starting) return
+    setStarting(true)
+    try {
+      const hostName = user?.name || 'Host'
+      const members = contacts
+        .slice(0, team.members > 4 ? 5 : team.members)
+        .map((c) => c.name)
+      const response = await meetingApi.createMeeting({
+        roomName: crypto.randomUUID(),
+        meetingTitle: team.name,
+        meetingType: 'instant',
+        callType: 'group',
+        meetingDate: '',
+        meetingTime: '',
+        host: hostName,
+        participants: [hostName, ...members],
+      })
+      if (!response.success) {
+        setToast(response.message || 'Unable to start call')
+        setTimeout(() => setToast(null), 4000)
+        return
+      }
+      goToActiveCall(response.data)
+    } catch (err) {
+      setToast(err.message || 'Unable to start call')
+      setTimeout(() => setToast(null), 4000)
+    } finally {
+      setStarting(false)
+    }
+  }
+
+  const recallRecent = (rc) => {
+    createOneToOne({ title: rc.name, otherName: rc.name })
   }
 
   return (
@@ -93,7 +157,8 @@ export default function CallsHub() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setModalOpen(true)}
-                className="flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary rounded-xl font-headline-md shadow-lg shadow-primary/20 hover:bg-primary-container active:scale-[0.98] transition-all"
+                disabled={starting}
+                className="flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary rounded-xl font-headline-md shadow-lg shadow-primary/20 hover:bg-primary-container active:scale-[0.98] transition-all disabled:opacity-60"
               >
                 <span className="material-symbols-outlined text-[18px]">add</span>
                 New Meeting
@@ -177,14 +242,17 @@ export default function CallsHub() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="font-headline-md text-headline-md text-on-surface">One-to-One</h3>
-                  <span className="text-body-sm text-on-surface-variant">Tap to call instantly</span>
+                  <span className="text-body-sm text-on-surface-variant">
+                    {starting ? 'Starting…' : 'Tap to call instantly'}
+                  </span>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {contacts.map((c) => (
                     <button
                       key={c.id}
                       onClick={() => quickCall1to1(c)}
-                      className="group flex flex-col items-center gap-2 p-4 bg-surface-container-lowest border border-outline-variant/30 rounded-xl card-lift"
+                      disabled={starting}
+                      className="group flex flex-col items-center gap-2 p-4 bg-surface-container-lowest border border-outline-variant/30 rounded-xl card-lift disabled:opacity-60"
                     >
                       <div className="relative w-14 h-14 rounded-full overflow-hidden bg-surface-container-high flex items-center justify-center">
                         {c.initials ? (
@@ -212,7 +280,8 @@ export default function CallsHub() {
                     <button
                       key={t.id}
                       onClick={() => quickCallGroup(t)}
-                      className="flex items-center gap-4 p-5 bg-surface-container-lowest border border-outline-variant/30 rounded-2xl card-lift text-left"
+                      disabled={starting}
+                      className="flex items-center gap-4 p-5 bg-surface-container-lowest border border-outline-variant/30 rounded-2xl card-lift text-left disabled:opacity-60"
                     >
                       <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-on-primary flex-shrink-0">
                         <span className="material-symbols-outlined">{t.icon}</span>
@@ -247,8 +316,9 @@ export default function CallsHub() {
                         </div>
                       </div>
                       <button
-                        onClick={() => navigate('/calls/active', { state: { title: rc.name, callType: rc.type, participants: [] } })}
-                        className="w-9 h-9 flex items-center justify-center rounded-full text-primary hover:bg-primary/10 transition-colors"
+                        onClick={() => recallRecent(rc)}
+                        disabled={starting}
+                        className="w-9 h-9 flex items-center justify-center rounded-full text-primary hover:bg-primary/10 transition-colors disabled:opacity-60"
                       >
                         <span className="material-symbols-outlined text-[20px]">call</span>
                       </button>
@@ -269,7 +339,7 @@ export default function CallsHub() {
 
         {/* Toast */}
         {toast && (
-          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[110] bg-inverse-surface text-inverse-on-surface px-6 py-3 rounded-xl shadow-2xl text-body-md animate-content-entrance">
+          <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[110] bg-inverse-surface text-inverse-on-surface px-6 py-3 rounded-xl shadow-2xl text-body-md animate-content-entrance max-w-[90vw] truncate">
             {toast}
           </div>
         )}

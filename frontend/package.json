@@ -10,13 +10,15 @@
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",
+    "@fullcalendar/react": "^7.0.2",
     "@livekit/components-react": "^2.9.23",
     "@livekit/components-styles": "^1.2.0",
     "livekit-client": "^2.20.1",
     "material-symbols": "^0.45.8",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.26.0"
+    "react-router-dom": "^6.26.0",
+    "temporal-polyfill": "^1.0.3"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",

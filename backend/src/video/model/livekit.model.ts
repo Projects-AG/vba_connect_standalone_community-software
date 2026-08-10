@@ -45,14 +45,16 @@ export class LivekitModel {
 
     async generateToken(
         roomName: string,
-        participantName: string,
+        identity: string,
+        displayName?: string,
     ) {
 
         const token = new AccessToken(
             this.configService.get<string>('LIVEKIT_API_KEY')!,
             this.configService.get<string>('LIVEKIT_API_SECRET')!,
             {
-                identity: participantName,
+                identity,
+                name: displayName || identity,
             },
         );
 

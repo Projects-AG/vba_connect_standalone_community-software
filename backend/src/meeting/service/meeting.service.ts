@@ -29,7 +29,10 @@ export class MeetingService {
       participants: dto.participants || [],
       participantCount: (dto.participants || []).length,
       meetingLink: `/join/${meetingId}`,
-      status: dto.meetingType === 'scheduled' ? 'Scheduled' : 'Live',
+      status:
+        dto.meetingType === 'scheduled' || dto.meetingType === 'schedule'
+          ? 'Scheduled'
+          : 'Live',
     };
 
     // LiveKit auto-creates rooms on first join; don't block meeting persistence if server is down.
@@ -115,13 +118,17 @@ export class MeetingService {
     };
   }
 
-  async generateToken(meetingId: string, participant: string) {
+  async generateToken(
+    meetingId: string,
+    user: { id: string; name: string },
+  ) {
     const meeting = await this.meetingModel.findById(meetingId);
     if (!meeting) throw new NotFoundException('Meeting not found');
 
     const token = await this.livekitModel.generateToken(
       meeting.roomName,
-      participant,
+      user.id,
+      user.name,
     );
 
     return {
@@ -131,20 +138,24 @@ export class MeetingService {
     };
   }
 
-  async connectMeeting(meetingId: string, participant: string) {
+  async connectMeeting(
+    meetingId: string,
+    user: { id: string; name: string },
+  ) {
     const meeting = await this.meetingModel.findById(meetingId);
     if (!meeting) throw new NotFoundException('Meeting not found');
 
-    await this.meetingModel.addParticipant(meetingId, participant);
+    await this.meetingModel.addParticipant(meetingId, user.name);
 
     const token = await this.livekitModel.generateToken(
       meeting.roomName,
-      participant,
+      user.id,
+      user.name,
     );
 
     return {
       success: true,
-      meeting,
+      meeting: await this.meetingModel.findById(meetingId),
       token,
       roomName: meeting.roomName,
     };

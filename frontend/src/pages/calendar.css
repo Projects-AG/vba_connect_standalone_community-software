@@ -1,0 +1,18 @@
+/* Light overrides so FullCalendar fits Project Loop chrome */
+.loop-calendar .fc {
+  height: 100%;
+  font-family: inherit;
+}
+
+.loop-calendar .fc .fc-scrollgrid {
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.loop-calendar .fc .fc-daygrid-day:hover {
+  cursor: pointer;
+}
+
+.loop-calendar .fc .fc-event {
+  cursor: pointer;
+}

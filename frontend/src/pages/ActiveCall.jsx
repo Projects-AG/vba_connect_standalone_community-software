@@ -8,9 +8,9 @@ import MeetingControls from "../livekit/MeetingControls";
 import { contacts as allContacts } from '../data/mockData'
 import { avatarDataUri } from '../utils/avatar'
 import { useAuth } from '../auth/AuthContext'
+import { meetingApi } from '../services/meetingApi'
 import {
   LiveKitRoom,
-  useRoomContext,
 } from "@livekit/components-react";
 
 
@@ -53,6 +53,7 @@ export default function ActiveCall() {
   const [meeting, setMeeting] = useState(state || {})
   const [token, setToken] = useState(null)
   const [loadError, setLoadError] = useState('')
+  const [shareToast, setShareToast] = useState('')
 
   useEffect(() => {
     if (state?.meetingId) {
@@ -78,15 +79,13 @@ export default function ActiveCall() {
   }, [state])
 
   useEffect(() => {
-    if (!meeting.meetingId || !user?.name) return;
+    if (!meeting.meetingId || !user?.id) return;
 
     async function joinMeeting() {
       try {
-        const response = await meetingApi.generateToken(
-          meeting.meetingId,
-          user.name,
-        );
+        const response = await meetingApi.connectMeeting(meeting.meetingId);
         setToken(response.token);
+        if (response.meeting) setMeeting(response.meeting);
       } catch (err) {
         console.error(err);
         setLoadError(err.message || 'Unable to join meeting')
@@ -94,7 +93,7 @@ export default function ActiveCall() {
     }
 
     joinMeeting();
-  }, [meeting.meetingId, user?.name]);
+  }, [meeting.meetingId, user?.id]);
 
   const participants = allContacts.filter((c) =>
     meeting.participants?.includes(c.name)
@@ -120,6 +119,19 @@ export default function ActiveCall() {
   }
 
   const leaveCall = () => navigate('/calls')
+
+  const copyInviteLink = async () => {
+    if (!meeting.meetingId) return
+    const path = meeting.meetingLink || `/join/${meeting.meetingId}`
+    const shareUrl = `${window.location.origin}${path}`
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      setShareToast('Invite link copied')
+    } catch {
+      setShareToast(shareUrl)
+    }
+    setTimeout(() => setShareToast(''), 4000)
+  }
 
   // const {
   //   toggleMic,
@@ -165,6 +177,17 @@ export default function ActiveCall() {
                 </div>
               )}
             </div>
+            {meeting.meetingId && (
+              <button
+                type="button"
+                onClick={copyInviteLink}
+                title="Copy invite link"
+                className="flex items-center gap-1.5 px-3 h-10 rounded-full border border-outline-variant/40 hover:bg-surface-variant transition-colors text-on-surface"
+              >
+                <span className="material-symbols-outlined text-[20px]">link</span>
+                <span className="hidden sm:inline font-label-md text-label-md">Share</span>
+              </button>
+            )}
             <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors">
               <span className="material-symbols-outlined">more_vert</span>
             </button>
@@ -274,6 +297,12 @@ export default function ActiveCall() {
         </div>
 
       </main>
+
+      {shareToast && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[110] bg-inverse-surface text-inverse-on-surface px-6 py-3 rounded-xl shadow-2xl text-body-md animate-content-entrance max-w-[90vw] truncate">
+          {shareToast}
+        </div>
+      )}
     </div>
   )
 }
