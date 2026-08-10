@@ -5,8 +5,11 @@ import { VideoModule } from './video/video.module';
 import { NotificationModule } from './notifications/notification.module';
 import { MeetingModule } from './meeting/meeting.module';
 import { AuthModule } from './auth/auth.module';
+import { ChatModule } from './chat/chat.module';
 import { UserEntity } from './auth/entities/user.entity';
 import { MeetingEntity } from './meeting/entities/meeting.entity';
+import { ConversationEntity } from './chat/entities/conversation.entity';
+import { MessageEntity } from './chat/entities/message.entity';
 
 @Module({
   imports: [
@@ -23,7 +26,12 @@ import { MeetingEntity } from './meeting/entities/meeting.entity';
         username: config.get<string>('DB_USER') || 'root',
         password: config.get<string>('DB_PASSWORD') || '',
         database: config.get<string>('DB_NAME') || 'loop_db',
-        entities: [UserEntity, MeetingEntity],
+        entities: [
+          UserEntity,
+          MeetingEntity,
+          ConversationEntity,
+          MessageEntity,
+        ],
         synchronize: config.get<string>('DB_SYNC') !== 'false',
         autoLoadEntities: true,
       }),
@@ -32,6 +40,7 @@ import { MeetingEntity } from './meeting/entities/meeting.entity';
     VideoModule,
     NotificationModule,
     MeetingModule,
+    ChatModule,
   ],
 })
 export class AppModule {}
