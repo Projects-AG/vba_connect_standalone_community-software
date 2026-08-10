@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import LoopBrand from '../components/LoopBrand'
 
 export default function Register() {
   const { register, isAuthenticated, booting } = useAuth()
@@ -11,7 +12,7 @@ export default function Register() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const redirectTo = location.state?.from || '/teams'
+  const redirectTo = location.state?.from || '/chat'
 
   if (!booting && isAuthenticated) {
     return <Navigate to={redirectTo} replace />
@@ -32,14 +33,14 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen bg-surface flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-surface-container-lowest rounded-2xl border border-outline-variant/20 p-8 card-shadow">
-        <div className="mb-8 text-center">
-          <div className="text-primary font-headline-xl text-headline-xl font-bold mb-2">Project Loop</div>
-          <p className="text-on-surface-variant text-body-md">Create your account</p>
-        </div>
+    <div className="loop-auth-shell">
+      <div className="loop-auth-card">
+        <LoopBrand variant="auth" showTagline className="mb-8" />
 
-        <form onSubmit={onSubmit} className="space-y-4">
+        <form onSubmit={onSubmit} className="loop-auth-form space-y-4">
+          <p className="text-center text-on-surface-variant text-body-md -mt-2 mb-2">
+            Create your account
+          </p>
           <div>
             <label className="block text-label-md text-on-surface-variant mb-1">Full name</label>
             <input

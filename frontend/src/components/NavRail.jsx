@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import LoopBrand from './LoopBrand'
 
 const items = [
   { to: '/activity', icon: 'notifications', label: 'Activity' },
@@ -19,8 +20,8 @@ export default function NavRail({ withTopOffset = false }) {
       }`}
     >
       {!withTopOffset && (
-        <div className="mb-8">
-          <span className="text-headline-md font-headline-md font-bold text-primary">V</span>
+        <div className="mb-6">
+          <LoopBrand variant="rail" />
         </div>
       )}
       <div className="flex flex-col gap-4 flex-1">

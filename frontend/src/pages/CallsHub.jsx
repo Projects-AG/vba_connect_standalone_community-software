@@ -7,22 +7,33 @@ import { callsApi } from '../services/callsApi'
 import { avatarDataUri } from '../utils/avatar'
 
 function statusIcon(item) {
+  if (item.mediaType === 'video' || item.callMode === 'video') {
+    if (item.status === 'missed') return 'videocam_off'
+    return 'videocam'
+  }
   if (item.status === 'missed') return 'call_missed'
   if (item.direction === 'outgoing') return 'call_made'
   return 'call_received'
 }
 
 function statusLabel(item) {
-  if (item.status === 'missed') return 'Missed'
+  const video = item.mediaType === 'video' || item.callMode === 'video'
+  if (item.status === 'missed') return video ? 'Missed video' : 'Missed'
   if (item.status === 'ringing') return item.direction === 'outgoing' ? 'Calling…' : 'Incoming'
   if (item.status === 'cancelled') return 'Cancelled'
   if (item.status === 'answered' || item.status === 'ended') {
     if (item.durationSeconds > 0) {
       const m = Math.floor(item.durationSeconds / 60)
       const s = item.durationSeconds % 60
-      return `${m}m ${String(s).padStart(2, '0')}s`
+      return `${video ? 'Video · ' : ''}${m}m ${String(s).padStart(2, '0')}s`
     }
-    return item.direction === 'outgoing' ? 'Outgoing' : 'Incoming'
+    return video
+      ? item.direction === 'outgoing'
+        ? 'Outgoing video'
+        : 'Incoming video'
+      : item.direction === 'outgoing'
+        ? 'Outgoing'
+        : 'Incoming'
   }
   return item.status
 }
@@ -91,31 +102,43 @@ export default function CallsHub() {
     )
   }, [users, query])
 
-  const goToAudioCall = (call) => {
+  const goToCall = (call) => {
+    const mode = call.callMode || call.mediaType || 'audio'
     navigate('/calls/active', {
       state: {
         meetingId: call.meetingId,
         roomName: call.roomName,
         meetingTitle: call.meetingTitle || `Call with ${call.peerName}`,
         callType: '1:1',
-        callMode: 'audio',
+        callMode: mode === 'video' ? 'video' : 'audio',
         callLogId: call.id,
         peerName: call.peerName,
+        peerUserId: call.peerUserId,
+        conversationId: call.conversationId || null,
+        isCaller: call.isCaller !== false && !call.fromAnswer,
+        awaitAnswer: call.awaitAnswer === true,
         participants: [],
       },
     })
   }
 
-  const placeCall = async (peerUserId) => {
+  const placeCall = async (peerUserId, mediaType = 'audio') => {
     if (starting || !peerUserId) return
     setStarting(true)
     try {
-      const res = await callsApi.startCall(peerUserId)
+      let conversationId = null
+      try {
+        const conv = await chatApi.getOrCreateConversation(peerUserId)
+        conversationId = conv.data?.id || null
+      } catch {
+        /* chat optional */
+      }
+      const res = await callsApi.startCall(peerUserId, mediaType)
       if (!res.success) {
         showToast(res.message || 'Unable to start call')
         return
       }
-      goToAudioCall(res.data)
+      goToCall({ ...res.data, conversationId, isCaller: true, awaitAnswer: true })
     } catch (err) {
       showToast(err.message || 'Unable to start call')
     } finally {
@@ -127,12 +150,30 @@ export default function CallsHub() {
     if (starting) return
     setStarting(true)
     try {
+      let conversationId = null
+      if (call.peerUserId) {
+        try {
+          const conv = await chatApi.getOrCreateConversation(call.peerUserId)
+          conversationId = conv.data?.id || null
+        } catch {
+          /* ignore */
+        }
+      }
       const res = await callsApi.answerCall(call.id)
       if (!res.success) {
         showToast(res.message || 'Unable to answer')
         return
       }
-      goToAudioCall({ ...res.data, meetingTitle: `Call with ${call.peerName}` })
+      goToCall({
+        ...res.data,
+        meetingTitle: `Call with ${call.peerName}`,
+        peerName: call.peerName,
+        peerUserId: call.peerUserId || res.data?.peerUserId,
+        conversationId,
+        isCaller: false,
+        fromAnswer: true,
+        awaitAnswer: false,
+      })
     } catch (err) {
       showToast(err.message || 'Unable to answer')
     } finally {
@@ -141,7 +182,9 @@ export default function CallsHub() {
   }
 
   const callback = (item) => {
-    if (item.peerUserId) placeCall(item.peerUserId)
+    if (!item.peerUserId) return
+    const mode = item.mediaType === 'video' || item.callMode === 'video' ? 'video' : 'audio'
+    placeCall(item.peerUserId, mode)
   }
 
   return (

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import LoopBrand from '../components/LoopBrand'
 
 export default function Login() {
   const { login, isAuthenticated, booting } = useAuth()
@@ -12,7 +13,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
 
   if (!booting && isAuthenticated) {
-    return <Navigate to={location.state?.from || '/teams'} replace />
+    return <Navigate to={location.state?.from || '/chat'} replace />
   }
 
   const onSubmit = async (e) => {
@@ -21,7 +22,7 @@ export default function Login() {
     setLoading(true)
     try {
       await login({ email, password })
-      navigate(location.state?.from || '/teams', { replace: true })
+      navigate(location.state?.from || '/chat', { replace: true })
     } catch (err) {
       setError(err.message || 'Login failed')
     } finally {
@@ -30,14 +31,14 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-surface flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-surface-container-lowest rounded-2xl border border-outline-variant/20 p-8 card-shadow">
-        <div className="mb-8 text-center">
-          <div className="text-primary font-headline-xl text-headline-xl font-bold mb-2">Project Loop</div>
-          <p className="text-on-surface-variant text-body-md">Sign in to join teams and calls</p>
-        </div>
+    <div className="loop-auth-shell">
+      <div className="loop-auth-card">
+        <LoopBrand variant="auth" showTagline className="mb-8" />
 
-        <form onSubmit={onSubmit} className="space-y-4">
+        <form onSubmit={onSubmit} className="loop-auth-form space-y-4">
+          <p className="text-center text-on-surface-variant text-body-md -mt-2 mb-2">
+            Sign in to continue
+          </p>
           <div>
             <label className="block text-label-md text-on-surface-variant mb-1">Email</label>
             <input

@@ -25,9 +25,18 @@ export class CallsController {
     return this.callsService.getIncoming(user);
   }
 
+  @Get(':id')
+  getCall(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.callsService.getCall(user, id);
+  }
+
   @Post('start')
   start(@CurrentUser() user: AuthUser, @Body() dto: StartCallDto) {
-    return this.callsService.startCall(user, dto.peerUserId);
+    return this.callsService.startCall(
+      user,
+      dto.peerUserId,
+      dto.mediaType || 'audio',
+    );
   }
 
   @Post(':id/answer')

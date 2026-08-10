@@ -1,15 +1,15 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import Dashboard from './pages/Dashboard'
-import Posts from './pages/Posts'
 import CallsHub from './pages/CallsHub'
 import ActiveCall from './pages/ActiveCall'
-import StubView from './pages/StubView'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import JoinMeeting from './pages/JoinMeeting'
 import Calendar from './pages/Calendar'
 import Chat from './pages/Chat'
+import ComingSoonPage from './pages/ComingSoonPage'
 import ProtectedRoute from './auth/ProtectedRoute'
+
+const HOME = '/chat'
 
 export default function App() {
   return (
@@ -17,7 +17,7 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      <Route path="/" element={<Navigate to="/teams" replace />} />
+      <Route path="/" element={<Navigate to={HOME} replace />} />
       <Route
         path="/join/:meetingId"
         element={
@@ -30,7 +30,11 @@ export default function App() {
         path="/teams"
         element={
           <ProtectedRoute>
-            <Dashboard />
+            <ComingSoonPage
+              title="Teams — Coming soon"
+              subtitle="Community and channel features are not available yet. Use Chat, Calls, or Calendar."
+              icon="groups"
+            />
           </ProtectedRoute>
         }
       />
@@ -38,7 +42,11 @@ export default function App() {
         path="/posts"
         element={
           <ProtectedRoute>
-            <Posts />
+            <ComingSoonPage
+              title="Posts — Coming soon"
+              subtitle="Team posts are not available yet."
+              icon="forum"
+            />
           </ProtectedRoute>
         }
       />
@@ -62,7 +70,11 @@ export default function App() {
         path="/activity"
         element={
           <ProtectedRoute>
-            <StubView icon="notifications_active" title="Recent Activity" subtitle="Stay updated on all team movements." />
+            <ComingSoonPage
+              title="Activity — Coming soon"
+              subtitle="Activity feed is not available yet."
+              icon="notifications_active"
+            />
           </ProtectedRoute>
         }
       />
@@ -82,7 +94,7 @@ export default function App() {
           </ProtectedRoute>
         }
       />
-      <Route path="*" element={<Navigate to="/teams" replace />} />
+      <Route path="*" element={<Navigate to={HOME} replace />} />
     </Routes>
   )
 }

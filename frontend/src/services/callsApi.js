@@ -35,11 +35,18 @@ export const callsApi = {
     return parseJson(res)
   },
 
-  async startCall(peerUserId) {
+  async getCall(callId) {
+    const res = await fetch(`${API_BASE_URL}/call-logs/${callId}`, {
+      headers: authHeaders(),
+    })
+    return parseJson(res)
+  },
+
+  async startCall(peerUserId, mediaType = 'audio') {
     const res = await fetch(`${API_BASE_URL}/call-logs/start`, {
       method: 'POST',
       headers: authHeaders(),
-      body: JSON.stringify({ peerUserId }),
+      body: JSON.stringify({ peerUserId, mediaType }),
     })
     return parseJson(res)
   },

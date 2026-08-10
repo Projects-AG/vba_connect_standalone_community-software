@@ -9,6 +9,7 @@ import {
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { callsApi } from '../services/callsApi'
+import { chatApi } from '../services/chatApi'
 import { avatarDataUri } from '../utils/avatar'
 
 const IncomingCallContext = createContext(null)
@@ -55,8 +56,9 @@ function notifyBrowser(call) {
     return
   }
   if (Notification.permission !== 'granted') return
+  const isVideo = call.mediaType === 'video' || call.callMode === 'video'
   try {
-    const n = new Notification('Incoming call', {
+    const n = new Notification(isVideo ? 'Incoming video call' : 'Incoming call', {
       body: `${call.peerName || 'Someone'} is calling…`,
       tag: `call-${call.id}`,
       renotify: true,
@@ -137,6 +139,22 @@ export function IncomingCallProvider({ children }) {
     setBusy(true)
     try {
       const res = await callsApi.answerCall(incoming.id)
+      const mode =
+        res.data?.callMode ||
+        res.data?.mediaType ||
+        incoming.callMode ||
+        incoming.mediaType ||
+        'audio'
+      let conversationId = null
+      const peerId = incoming.peerUserId || res.data?.peerUserId
+      if (peerId) {
+        try {
+          const conv = await chatApi.getOrCreateConversation(peerId)
+          conversationId = conv.data?.id || null
+        } catch {
+          /* ignore */
+        }
+      }
       clearIncoming()
       navigate('/calls/active', {
         state: {
@@ -144,9 +162,13 @@ export function IncomingCallProvider({ children }) {
           roomName: res.data?.roomName || incoming.roomName,
           meetingTitle: `Call with ${incoming.peerName}`,
           callType: '1:1',
-          callMode: 'audio',
+          callMode: mode === 'video' ? 'video' : 'audio',
           callLogId: incoming.id,
           peerName: incoming.peerName,
+          peerUserId: peerId,
+          conversationId,
+          isCaller: false,
+          awaitAnswer: false,
           participants: [],
         },
       })
@@ -171,13 +193,18 @@ export function IncomingCallProvider({ children }) {
     }
   }, [incoming, busy, clearIncoming])
 
+  const isVideoIncoming =
+    incoming?.mediaType === 'video' || incoming?.callMode === 'video'
+
   return (
     <IncomingCallContext.Provider value={{ incoming, answer, decline }}>
       {children}
       {incoming && location.pathname !== '/calls/active' && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-on-background/50 backdrop-blur-sm p-4">
           <div className="w-full max-w-sm bg-surface-container-lowest rounded-2xl shadow-2xl ring-1 ring-outline-variant/20 p-8 text-center animate-content-entrance">
-            <p className="text-body-sm text-on-surface-variant mb-4">Incoming call</p>
+            <p className="text-body-sm text-on-surface-variant mb-4">
+              {isVideoIncoming ? 'Incoming video call' : 'Incoming call'}
+            </p>
             <div className="mx-auto w-24 h-24 rounded-full overflow-hidden bg-secondary-container mb-4">
               <img
                 src={avatarDataUri(incoming.peerName, incoming.peerUserId)}
@@ -208,7 +235,9 @@ export function IncomingCallProvider({ children }) {
                 className="flex flex-col items-center gap-2 disabled:opacity-60"
               >
                 <span className="w-14 h-14 rounded-full bg-green-600 text-white flex items-center justify-center shadow-lg animate-pulse">
-                  <span className="material-symbols-outlined text-[28px]">call</span>
+                  <span className="material-symbols-outlined text-[28px]">
+                    {isVideoIncoming ? 'videocam' : 'call'}
+                  </span>
                 </span>
                 <span className="font-label-md text-label-md text-on-surface-variant">Answer</span>
               </button>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { meetingApi } from '../services/meetingApi'
 import { useAuth } from '../auth/AuthContext'
+import LoopBrand from '../components/LoopBrand'
 
 export default function JoinMeeting() {
   const { meetingId } = useParams()
@@ -66,12 +67,10 @@ export default function JoinMeeting() {
   }
 
   return (
-    <div className="min-h-screen bg-surface flex items-center justify-center px-4">
-      <div className="w-full max-w-md bg-surface-container-lowest rounded-2xl border border-outline-variant/20 p-8 card-shadow">
-        <div className="mb-6 text-center">
-          <div className="text-primary font-headline-xl text-headline-xl font-bold mb-2">Project Loop</div>
-          <p className="text-on-surface-variant text-body-md">Join meeting</p>
-        </div>
+    <div className="loop-auth-shell">
+      <div className="loop-auth-card">
+        <LoopBrand variant="auth" showTagline className="mb-6" />
+        <p className="text-center text-on-surface-variant text-body-md -mt-4 mb-6">Join meeting</p>
 
         {loading && (
           <div className="flex items-center justify-center gap-3 py-8 text-on-surface-variant">

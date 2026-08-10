@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import NavRail from '../components/NavRail'
 import TopHeader from '../components/TopHeader'
 import { useAuth } from '../auth/AuthContext'
 import { chatApi } from '../services/chatApi'
-import { meetingApi } from '../services/meetingApi'
+import { callsApi } from '../services/callsApi'
 import { avatarDataUri } from '../utils/avatar'
 
 function formatTime(value) {
@@ -30,9 +30,10 @@ function formatListTime(value) {
 export default function Chat() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [conversations, setConversations] = useState([])
   const [users, setUsers] = useState([])
-  const [activeId, setActiveId] = useState(null)
+  const [activeId, setActiveId] = useState(() => location.state?.conversationId || null)
   const [messages, setMessages] = useState([])
   const [draft, setDraft] = useState('')
   const [loadingList, setLoadingList] = useState(true)
@@ -41,10 +42,38 @@ export default function Chat() {
   const [error, setError] = useState('')
   const [newOpen, setNewOpen] = useState(false)
   const [userQuery, setUserQuery] = useState('')
+  const [chatQuery, setChatQuery] = useState('')
   const [startingCall, setStartingCall] = useState(false)
   const bottomRef = useRef(null)
 
   const active = conversations.find((c) => c.id === activeId) || null
+
+  const filteredConversations = useMemo(() => {
+    const q = chatQuery.trim().toLowerCase()
+    if (!q) return []
+    return conversations.filter((c) => {
+      const name = c.peer?.name?.toLowerCase() || ''
+      const email = c.peer?.email?.toLowerCase() || ''
+      const preview = c.lastMessagePreview?.toLowerCase() || ''
+      return name.includes(q) || email.includes(q) || preview.includes(q)
+    })
+  }, [conversations, chatQuery])
+
+  const chatSuggestions = useMemo(
+    () =>
+      filteredConversations.map((c) => ({
+        id: c.id,
+        title: c.peer?.name || 'Unknown',
+        subtitle: c.lastMessagePreview || c.peer?.email || '',
+        avatarSeed: c.peer?.id,
+      })),
+    [filteredConversations],
+  )
+
+  const selectChatSuggestion = (item) => {
+    setActiveId(item.id)
+    setChatQuery('')
+  }
 
   const loadConversations = useCallback(async () => {
     try {
@@ -73,6 +102,14 @@ export default function Chat() {
   useEffect(() => {
     loadConversations()
   }, [loadConversations])
+
+  useEffect(() => {
+    const fromCall = location.state?.conversationId
+    if (fromCall) {
+      setActiveId(fromCall)
+      navigate(location.pathname, { replace: true, state: {} })
+    }
+  }, [location.state, location.pathname, navigate])
 
   useEffect(() => {
     if (!activeId) {
@@ -131,39 +168,33 @@ export default function Chat() {
     }
   }
 
-  const startVideoCall = async () => {
-    if (!active?.peer || startingCall) return
+  const startPeerCall = async (mediaType = 'audio') => {
+    if (!active?.peer?.id || startingCall) return
     setStartingCall(true)
     setError('')
     try {
-      const hostName = user?.name || 'Host'
-      const peerName = active.peer.name
-      const response = await meetingApi.createMeeting({
-        roomName: crypto.randomUUID(),
-        meetingTitle: `Call with ${peerName}`,
-        meetingType: 'instant',
-        callType: '1:1',
-        meetingDate: '',
-        meetingTime: '',
-        host: hostName,
-        participants: [hostName, peerName],
-      })
-      if (!response.success) {
-        throw new Error(response.message || 'Unable to start call')
+      const res = await callsApi.startCall(active.peer.id, mediaType)
+      if (!res.success) {
+        throw new Error(res.message || 'Unable to start call')
       }
-      const meeting = response.data
-      const path = meeting.meetingLink || `/join/${meeting.meetingId}`
-      try {
-        await navigator.clipboard.writeText(`${window.location.origin}${path}`)
-      } catch {
-        /* ignore */
-      }
+      const call = res.data
+      const mode = call.callMode || call.mediaType || mediaType
       navigate('/calls/active', {
         state: {
-          ...meeting,
-          meetingId: meeting.meetingId,
-          roomName: meeting.roomName,
-          meetingLink: meeting.meetingLink,
+          meetingId: call.meetingId,
+          roomName: call.roomName,
+          meetingTitle:
+            call.meetingTitle ||
+            `${mode === 'video' ? 'Video call' : 'Call'} with ${active.peer.name}`,
+          callType: '1:1',
+          callMode: mode === 'video' ? 'video' : 'audio',
+          callLogId: call.id,
+          peerName: active.peer.name,
+          peerUserId: active.peer.id,
+          conversationId: activeId,
+          isCaller: true,
+          awaitAnswer: true,
+          participants: [],
         },
       })
     } catch (err) {
@@ -183,7 +214,13 @@ export default function Chat() {
 
   return (
     <div className="bg-surface min-h-screen">
-      <TopHeader searchPlaceholder="Search chats" />
+      <TopHeader
+        searchPlaceholder="Search chats"
+        searchValue={chatQuery}
+        onSearchChange={setChatQuery}
+        suggestions={chatSuggestions}
+        onSelectSuggestion={selectChatSuggestion}
+      />
       <div className="flex h-screen pt-12">
         <NavRail withTopOffset />
         <main className="ml-20 flex-1 flex overflow-hidden">
@@ -275,18 +312,30 @@ export default function Chat() {
                       </p>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={startVideoCall}
-                    disabled={startingCall}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl border border-outline-variant hover:bg-surface-container-low transition-colors disabled:opacity-60"
-                    title="Start video call"
-                  >
-                    <span className="material-symbols-outlined text-[20px] text-primary">videocam</span>
-                    <span className="hidden sm:inline font-label-md text-label-md">
-                      {startingCall ? 'Starting…' : 'Call'}
-                    </span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => startPeerCall('audio')}
+                      disabled={startingCall}
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl border border-outline-variant hover:bg-surface-container-low transition-colors disabled:opacity-60"
+                      title="Audio call"
+                    >
+                      <span className="material-symbols-outlined text-[20px] text-primary">call</span>
+                      <span className="hidden sm:inline font-label-md text-label-md">
+                        {startingCall ? 'Calling…' : 'Call'}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => startPeerCall('video')}
+                      disabled={startingCall}
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl border border-outline-variant hover:bg-surface-container-low transition-colors disabled:opacity-60"
+                      title="Video call"
+                    >
+                      <span className="material-symbols-outlined text-[20px] text-primary">videocam</span>
+                      <span className="hidden sm:inline font-label-md text-label-md">Video</span>
+                    </button>
+                  </div>
                 </header>
 
                 {error && (

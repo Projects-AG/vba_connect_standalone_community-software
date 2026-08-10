@@ -32,6 +32,10 @@ export class CallLogEntity {
   @Column({ name: 'room_name', length: 120, default: '' })
   roomName: string;
 
+  /** audio | video */
+  @Column({ name: 'media_type', length: 20, default: 'audio' })
+  mediaType: string;
+
   /** ringing | answered | missed | cancelled | ended */
   @Column({ length: 40, default: 'ringing' })
   status: string;

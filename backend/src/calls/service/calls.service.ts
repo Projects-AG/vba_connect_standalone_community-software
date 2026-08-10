@@ -45,10 +45,13 @@ export class CallsService {
 
   private toHistoryItem(row: CallLogEntity, viewerId: string) {
     const isCaller = row.callerUserId === viewerId;
+    const mediaType = row.mediaType === 'video' ? 'video' : 'audio';
     return {
       id: row.id,
       direction: isCaller ? 'outgoing' : 'incoming',
       status: row.status,
+      mediaType,
+      callMode: mediaType,
       peerUserId: isCaller ? row.calleeUserId : row.callerUserId,
       peerName: isCaller ? row.calleeName : row.callerName,
       meetingId: row.meetingId,
@@ -60,7 +63,11 @@ export class CallsService {
     };
   }
 
-  async startCall(user: AuthUser, peerUserId: string) {
+  async startCall(
+    user: AuthUser,
+    peerUserId: string,
+    mediaType: 'audio' | 'video' = 'audio',
+  ) {
     if (peerUserId === user.id) {
       throw new BadRequestException('Cannot call yourself');
     }
@@ -68,10 +75,14 @@ export class CallsService {
     const peer = await this.users.findOne({ where: { id: peerUserId } });
     if (!peer) throw new NotFoundException('User not found');
 
+    const mode = mediaType === 'video' ? 'video' : 'audio';
     const roomName = randomUUID();
     const meetingRes = await this.meetingService.createMeeting({
       roomName,
-      meetingTitle: `Call with ${peer.name}`,
+      meetingTitle:
+        mode === 'video'
+          ? `Video call with ${peer.name}`
+          : `Call with ${peer.name}`,
       meetingType: 'instant',
       callType: '1:1',
       meetingDate: '',
@@ -90,6 +101,7 @@ export class CallsService {
       calleeName: peer.name,
       meetingId: meeting.meetingId,
       roomName: meeting.roomName || roomName,
+      mediaType: mode,
       status: 'ringing',
       answeredAt: null,
       endedAt: null,
@@ -101,7 +113,6 @@ export class CallsService {
       success: true,
       data: {
         ...this.toHistoryItem(row, user.id),
-        callMode: 'audio',
         meetingTitle: meeting.meetingTitle,
         meetingLink: meeting.meetingLink,
       },
@@ -127,7 +138,6 @@ export class CallsService {
       success: true,
       data: {
         ...this.toHistoryItem(row, user.id),
-        callMode: 'audio',
         meetingTitle: `Call with ${row.callerName}`,
       },
     };
@@ -162,6 +172,19 @@ export class CallsService {
     }
 
     return { success: true, data: this.toHistoryItem(row, user.id) };
+  }
+
+  async getCall(user: AuthUser, callId: string) {
+    await this.expireStaleRinging(user.id);
+    const row = await this.callLogs.findOne({ where: { id: callId } });
+    if (!row) throw new NotFoundException('Call not found');
+    if (row.callerUserId !== user.id && row.calleeUserId !== user.id) {
+      throw new BadRequestException('Not a participant');
+    }
+    return {
+      success: true,
+      data: this.toHistoryItem(row, user.id),
+    };
   }
 
   async getHistory(user: AuthUser) {
