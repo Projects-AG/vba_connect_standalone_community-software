@@ -6,6 +6,7 @@ import Register from './pages/Register'
 import JoinMeeting from './pages/JoinMeeting'
 import Calendar from './pages/Calendar'
 import Chat from './pages/Chat'
+import Profile from './pages/Profile'
 import ComingSoonPage from './pages/ComingSoonPage'
 import ProtectedRoute from './auth/ProtectedRoute'
 
@@ -91,6 +92,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <Calendar />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         }
       />

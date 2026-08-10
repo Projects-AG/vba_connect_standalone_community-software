@@ -30,7 +30,10 @@ export class AuthController {
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
   @Get('me')
-  me(@CurrentUser() user: { id: string; name: string; email: string }) {
+  me(
+    @CurrentUser()
+    user: { id: string; name: string; email: string; createdAt?: Date },
+  ) {
     return { user };
   }
 }

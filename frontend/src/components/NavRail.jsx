@@ -55,9 +55,23 @@ export default function NavRail({ withTopOffset = false }) {
         <button className="flex items-center justify-center w-12 h-12 rounded-xl text-on-surface-variant hover:bg-surface-variant transition-all duration-300 active:scale-90">
           <span className="material-symbols-outlined">settings</span>
         </button>
-        <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-outline-variant" title={user?.name}>
-          <img className="w-full h-full object-cover" src={user?.avatar} alt={user?.name || 'User'} />
-        </div>
+        <NavLink
+          to="/profile"
+          title={user?.name ? `${user.name} — Profile` : 'Profile'}
+          className={({ isActive }) =>
+            `w-10 h-10 rounded-full overflow-hidden border-2 transition-all duration-300 active:scale-90 ${
+              isActive
+                ? 'border-primary ring-2 ring-primary/25'
+                : 'border-outline-variant hover:border-primary/50'
+            }`
+          }
+        >
+          <img
+            className="w-full h-full object-cover"
+            src={user?.avatar}
+            alt={user?.name || 'Profile'}
+          />
+        </NavLink>
       </div>
     </nav>
   )

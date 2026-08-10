@@ -382,3 +382,124 @@ body {
   outline: none !important;
   box-shadow: none !important;
 }
+
+/* ——— Profile ——— */
+.loop-profile-stage {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(50, 57, 163, 0.12), transparent 55%),
+    radial-gradient(ellipse 45% 35% at 85% 70%, rgba(43, 123, 255, 0.06), transparent 60%),
+    radial-gradient(ellipse 40% 30% at 10% 80%, rgba(11, 22, 56, 0.04), transparent 55%);
+}
+
+.loop-profile-glow {
+  position: absolute;
+  top: 4rem;
+  left: 50%;
+  width: min(420px, 90vw);
+  height: 220px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center, rgba(50, 57, 163, 0.14), transparent 70%);
+  pointer-events: none;
+  animation: loopProfileGlow 4s ease-in-out infinite;
+}
+
+.loop-profile-avatar-wrap {
+  position: relative;
+  width: 148px;
+  height: 148px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loop-profile-avatar-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid rgba(50, 57, 163, 0.28);
+  animation: loopProfileRing 2.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.loop-profile-avatar-ring--delay {
+  animation-delay: 1s;
+}
+
+.loop-profile-avatar {
+  position: relative;
+  z-index: 1;
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #3239a3;
+  box-shadow:
+    0 0 0 4px rgba(252, 249, 248, 0.95),
+    0 14px 40px rgba(11, 22, 56, 0.16);
+  animation: loopProfileAvatarIn 0.7s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.loop-profile-panel {
+  padding: 1.25rem 1rem;
+  border-radius: 1.25rem;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(198, 197, 213, 0.35);
+  box-shadow: 0 8px 28px rgba(11, 22, 56, 0.06);
+  animation: contentEntrance 0.55s cubic-bezier(0.4, 0, 0.2, 1) 0.12s both;
+}
+
+.loop-profile-row {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 0.75rem;
+  border-radius: 0.875rem;
+  transition: background 0.2s ease;
+}
+
+.loop-profile-row:hover {
+  background: rgba(50, 57, 163, 0.04);
+}
+
+.loop-profile-row__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: rgba(50, 57, 163, 0.08);
+  color: #3239a3;
+}
+
+.loop-profile-row__icon .material-symbols-outlined {
+  font-size: 20px;
+}
+
+@keyframes loopProfileGlow {
+  0%, 100% { opacity: 0.7; transform: translateX(-50%) scale(0.96); }
+  50% { opacity: 1; transform: translateX(-50%) scale(1.04); }
+}
+
+@keyframes loopProfileRing {
+  0% { transform: scale(0.85); opacity: 0.65; }
+  100% { transform: scale(1.2); opacity: 0; }
+}
+
+@keyframes loopProfileAvatarIn {
+  from { opacity: 0; transform: scale(0.88); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loop-profile-glow,
+  .loop-profile-avatar-ring,
+  .loop-profile-avatar {
+    animation: none !important;
+  }
+}

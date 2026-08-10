@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import LoopBrand from './LoopBrand'
 import { avatarDataUri } from '../utils/avatar'
@@ -170,14 +171,18 @@ export default function TopHeader({
         >
           <span className="material-symbols-outlined text-on-surface-variant">logout</span>
         </button>
-        <div className="flex items-center gap-2 ml-2">
+        <Link
+          to="/profile"
+          title="View profile"
+          className="flex items-center gap-2 ml-2 rounded-full pr-2 hover:bg-surface-container-highest transition-colors duration-200"
+        >
           <div className="w-8 h-8 rounded-full overflow-hidden border border-outline-variant bg-surface-container">
             <img className="w-full h-full object-cover" src={user?.avatar} alt={user?.name || 'User'} />
           </div>
           <span className="hidden sm:block text-label-md text-on-surface max-w-[120px] truncate">
             {user?.name}
           </span>
-        </div>
+        </Link>
       </div>
     </header>
   )
