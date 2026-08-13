@@ -26,7 +26,11 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: backend/package-lock.json
-      - run: npm ci
+      - run: npm install -g npm@11
+      - name: Install
+        run: |
+          ls -la package.json package-lock.json
+          npm ci
       - run: npm run build
       - run: npm test -- --passWithNoTests
 
