@@ -1,0 +1,82 @@
+# Full-stack production stack for Hostinger KVM2 (or any VPS).
+# Run from repo root:
+#   docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod up -d --build
+#
+# UI:      http://<PUBLIC_HOST>/
+# Swagger: http://<PUBLIC_HOST>/api
+# LiveKit: ws://<PUBLIC_HOST>:7880
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME:-loop_db}
+      MYSQL_USER: ${DB_USER:-loop}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - loop_mysql_data:/var/lib/mysql
+    healthcheck:
+      # mysql:8.4 image has no healthcheck.sh on PATH; probe with mysqladmin instead
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD || exit 1"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 60s
+    # MySQL is internal-only (do not publish 3306)
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    image: ${BACKEND_IMAGE:-loop-backend:prod}
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      livekit:
+        condition: service_started
+    environment:
+      PORT: "8080"
+      NODE_ENV: production
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      LIVEKIT_HOST: ${LIVEKIT_HOST:-http://livekit:7880}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: ${DB_USER:-loop}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME:-loop_db}
+      DB_SYNC: ${DB_SYNC:-true}
+
+  web:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-}
+        VITE_LIVEKIT_URL: ${VITE_LIVEKIT_URL}
+    image: ${FRONTEND_IMAGE:-loop-web:prod}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${HTTP_PORT:-80}:80"
+
+  livekit:
+    image: livekit/livekit-server:v1.12.0
+    command: --config /etc/livekit.yaml
+    restart: unless-stopped
+    volumes:
+      - ./livekit.prod.yaml:/etc/livekit.yaml:ro
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "50000-50020:50000-50020/udp"
+
+volumes:
+  loop_mysql_data:
