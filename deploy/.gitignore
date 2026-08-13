@@ -1,4 +1,5 @@
 .env.prod
+livekit.prod.yaml
 backups/
 *.sql
 *.sql.gz

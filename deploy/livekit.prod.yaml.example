@@ -1,7 +1,8 @@
 # Production LiveKit config for Hostinger VPS.
-# LIVEKIT_API_KEY / LIVEKIT_API_SECRET in .env.prod MUST match the keys map below.
+# Copy to deploy/livekit.prod.yaml (gitignored) and set keys to match .env.prod:
+#   cp deploy/livekit.prod.yaml.example deploy/livekit.prod.yaml
 #
-# Replace CHANGE_ME_API_KEY and the secret with the same values from .env.prod.
+# LIVEKIT_API_KEY / LIVEKIT_API_SECRET in .env.prod MUST match the keys map below.
 
 port: 7880
 bind_addresses:

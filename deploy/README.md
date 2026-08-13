@@ -22,8 +22,9 @@ Files in this folder:
 |------|---------|
 | [docker-compose.prod.yml](docker-compose.prod.yml) | Production services |
 | [.env.prod.example](.env.prod.example) | Secrets template → copy to `.env.prod` |
-| [livekit.prod.yaml](livekit.prod.yaml) | LiveKit keys (must match `.env.prod`) |
+| [livekit.prod.yaml.example](livekit.prod.yaml.example) | LiveKit template → copy to `livekit.prod.yaml` (gitignored) |
 | [backup-mysql.sh](backup-mysql.sh) | Daily DB dump helper |
+| [vps-update.sh](vps-update.sh) | `git pull` + rebuild (used by GitHub Actions too) |
 
 ---
 
@@ -72,6 +73,7 @@ git clone <YOUR_REPO_URL> .
 # or scp/rsync the project onto the VPS
 
 cp deploy/.env.prod.example deploy/.env.prod
+cp deploy/livekit.prod.yaml.example deploy/livekit.prod.yaml
 nano deploy/.env.prod
 nano deploy/livekit.prod.yaml
 ```
@@ -185,10 +187,61 @@ docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod log
 # Stop
 docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod down
 
-# Rebuild after git pull
-git pull
-docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod up -d --build
+# Rebuild after git pull (keeps .env.prod and livekit.prod.yaml)
+bash deploy/vps-update.sh
 ```
+
+---
+
+## CI/CD (GitHub Actions)
+
+| Workflow | When | What |
+|----------|------|------|
+| [ci.yml](../.github/workflows/ci.yml) | Push/PR; deploy on `main` after CI is green | Build + test; then SSH rebuild on the VPS |
+| [deploy-vps.yml](../.github/workflows/deploy-vps.yml) | **Actions → Deploy VPS → Run workflow** | Manual deploy (same SSH rebuild) |
+
+Secrets on the VPS (`deploy/.env.prod`, `deploy/livekit.prod.yaml`) are **backed up and restored** on each deploy so `git reset` does not wipe them.
+
+### 1. Deploy SSH key (on your PC)
+
+```powershell
+ssh-keygen -t ed25519 -C "github-actions-loop-deploy" -f $HOME\.ssh\loop-deploy-key -N ""
+```
+
+Copy the **public** key to the VPS:
+
+```powershell
+type $HOME\.ssh\loop-deploy-key.pub
+```
+
+On the VPS:
+
+```bash
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+nano ~/.ssh/authorized_keys   # paste the .pub line, save
+chmod 600 ~/.ssh/authorized_keys
+```
+
+### 2. GitHub secrets
+
+Repo → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**:
+
+| Secret | Value |
+|--------|--------|
+| `VPS_HOST` | VPS public IP (e.g. `200.234.34.73`) |
+| `VPS_USER` | `root` (or your sudo user) |
+| `VPS_SSH_PRIVATE_KEY` | Full contents of `loop-deploy-key` (**private** file, including `BEGIN`/`END` lines) |
+
+Do **not** add `.env.prod` or LiveKit keys to GitHub. They stay on the VPS.
+
+### 3. First deploy after this lands
+
+1. Add the three secrets.
+2. Push to `main` (or **Actions** → **Deploy VPS** → **Run workflow**).
+3. Watch **Actions** until it is green, then open `http://<VPS_IP>/`.
+
+If SSH fails: confirm `authorized_keys`, UFW allows **22/tcp**, and the private key secret has no extra quotes.
 
 ## Troubleshooting
 
