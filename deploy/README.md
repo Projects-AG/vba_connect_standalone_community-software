@@ -72,9 +72,5 @@ Prerequisites:
 - Node.js (16+ recommended)
 - npm
 - Docker & Docker Compose (for combined local run)
-- LiveKit server (optional for full video experience)
 
-Option A — Run everything with Docker Compose (UI + API together)
-1. From repo root:
-   ```bash
-   docker compose up --build
+
