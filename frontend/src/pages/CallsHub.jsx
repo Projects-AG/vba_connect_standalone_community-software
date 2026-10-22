@@ -4,6 +4,7 @@ import NavRail from '../components/NavRail'
 import TopHeader from '../components/TopHeader'
 import { chatApi } from '../services/chatApi'
 import { callsApi } from '../services/callsApi'
+import { meetingApi } from '../services/meetingApi'
 import { avatarDataUri } from '../utils/avatar'
 
 function statusIcon(item) {
@@ -38,6 +39,13 @@ function statusLabel(item) {
   return item.status
 }
 
+function hasMeetingRecap(meeting) {
+  if (!meeting) return false
+  const status = String(meeting.status || '').toLowerCase()
+  if (['ended', 'completed', 'complete'].includes(status)) return true
+  return Array.isArray(meeting.recordings) && meeting.recordings.length > 0
+}
+
 function formatWhen(iso) {
   if (!iso) return ''
   const d = new Date(iso)
@@ -61,6 +69,8 @@ export default function CallsHub() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [starting, setStarting] = useState(false)
+  const [meetings, setMeetings] = useState([])
+  const [loadingMeetings, setLoadingMeetings] = useState(true)
   const [toast, setToast] = useState(null)
 
   const showToast = (message) => {
@@ -71,18 +81,21 @@ export default function CallsHub() {
   const load = useCallback(async () => {
     setError('')
     try {
-      const [usersRes, historyRes, incomingRes] = await Promise.all([
+      const [usersRes, historyRes, incomingRes, meetingsRes] = await Promise.all([
         chatApi.listUsers(),
         callsApi.listHistory(),
         callsApi.listIncoming(),
+        meetingApi.listMeetings().catch(() => ({ data: [] })),
       ])
       setUsers(usersRes.data || [])
       setHistory(historyRes.data || [])
       setIncoming(incomingRes.data || [])
+      setMeetings(meetingsRes.data || [])
     } catch (err) {
       setError(err.message || 'Unable to load calls')
     } finally {
       setLoading(false)
+      setLoadingMeetings(false)
     }
   }, [])
 
@@ -101,6 +114,14 @@ export default function CallsHub() {
         u.email?.toLowerCase().includes(q),
     )
   }, [users, query])
+
+  const recapMeetings = useMemo(
+    () =>
+      (meetings || [])
+        .filter((meeting) => meeting?.meetingId && hasMeetingRecap(meeting))
+        .sort((a, b) => new Date(b.meetingDate || b.createdAt || 0) - new Date(a.meetingDate || a.createdAt || 0)),
+    [meetings],
+  )
 
   const goToCall = (call) => {
     const mode = call.callMode || call.mediaType || 'audio'
@@ -241,6 +262,54 @@ export default function CallsHub() {
                   ))}
                 </div>
               )}
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="font-headline-md text-headline-md text-on-surface">Recordings &amp; Recaps</h3>
+                  <span className="rounded-full bg-primary/10 px-2 py-1 text-[11px] uppercase tracking-[0.12em] text-primary">
+                    {recapMeetings.length}
+                  </span>
+                </div>
+
+                {loadingMeetings && (
+                  <p className="text-body-sm text-on-surface-variant">Loading meeting recaps…</p>
+                )}
+
+                {!loadingMeetings && recapMeetings.length === 0 && (
+                  <p className="text-body-sm text-on-surface-variant">
+                    No completed meetings with recordings or AI recap are available yet.
+                  </p>
+                )}
+
+                {!loadingMeetings && recapMeetings.length > 0 && (
+                  <div className="space-y-2">
+                    {recapMeetings.map((meeting) => (
+                      <div
+                        key={meeting.meetingId}
+                        className="flex items-center justify-between gap-3 p-3 rounded-xl border border-outline-variant/30 bg-surface-container-lowest"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-label-md text-on-surface truncate">
+                            {meeting.meetingTitle || 'Meeting recap'}
+                          </p>
+                          <p className="text-body-sm text-on-surface-variant">
+                            {meeting.status || 'Completed'}
+                            {meeting.recordings?.length ? ` • ${meeting.recordings.length} recording${meeting.recordings.length > 1 ? 's' : ''}` : ''}
+                            {meeting.meetingDate ? ` • ${meeting.meetingDate}` : ''}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/recordings/${meeting.meetingId}`)}
+                          className="px-3 py-2 rounded-lg border border-outline-variant text-primary hover:bg-primary/5 font-label-md"
+                        >
+                          View recap
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* Search people */}
               <div className="space-y-4">

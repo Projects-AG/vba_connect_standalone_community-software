@@ -1,4 +1,5 @@
 port: 7880
+
 bind_addresses:
   - 0.0.0.0
 
@@ -6,10 +7,16 @@ rtc:
   tcp_port: 7881
   port_range_start: 50000
   port_range_end: 50020
-  use_external_ip: true
+  # Local Docker/NAT recording needs the server to advertise its LAN address,
+  # not a public external IP, otherwise the browser-based Egress participant
+  # cannot complete ICE and closes before the START_RECORDING signal arrives.
+  use_external_ip: false
+
+redis:
+  address: redis:6379
 
 keys:
-  devkey: myverylongsecretkey12345678901234567890
+  devkey: "myverylongsecretkey12345678901234567890"
 
 logging:
   level: info

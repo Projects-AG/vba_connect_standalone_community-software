@@ -21,7 +21,7 @@ services:
       LIVEKIT_API_SECRET: "myverylongsecretkey12345678901234567890"
       JWT_SECRET: "project-loop-dev-secret-change-me"
       JWT_EXPIRES_IN: "7d"
-      DB_HOST: ${DB_HOST:-host.docker.internal}
+      DB_HOST: host.docker.internal
       DB_PORT: ${DB_PORT:-3306}
       DB_USER: ${DB_USER:-root}
       DB_PASSWORD: ${DB_PASSWORD:-}
@@ -44,13 +44,57 @@ services:
     restart: unless-stopped
 
   livekit:
-    profiles: ["livekit"]
-    image: livekit/livekit-server:v1.12.0
+    profiles: ["livekit", "recording"]
+    image: livekit/livekit-server:v1.13.10
     command: --config /etc/livekit.yaml
     volumes:
       - ./livekit.yaml:/etc/livekit.yaml:ro
+    depends_on:
+      redis:
+        condition: service_started
     ports:
       - "7880:7880"
       - "7881:7881"
       - "50000-50020:50000-50020/udp"
     restart: unless-stopped
+
+  egress:
+    profiles: ["recording"]
+    image: livekit/egress:v1.13.0
+    cap_add:
+      - SYS_ADMIN
+    environment:
+      EGRESS_CONFIG_FILE: /etc/egress.yaml
+    volumes:
+      - ./egress.yaml:/etc/egress.yaml:ro
+      - "D:/LoopRecordings:/out"
+    depends_on:
+      - livekit
+      - redis
+    restart: unless-stopped
+
+  redis:
+    profiles: ["livekit","recording"]
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+  minio:
+    profiles: ["recording"]
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: localminio
+      MINIO_ROOT_PASSWORD: "ChangeThisLocalPassword123!"
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    restart: unless-stopped
+  
+volumes:
+  redis_data:
+  minio_data:

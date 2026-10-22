@@ -10,14 +10,17 @@
 
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { VideoController } from './controller/video.controller';
 import { VideoService } from './service/video.service';
 import { LivekitModel } from './model/livekit.model';
+import { MeetingModule } from '../meeting/meeting.module';
 
 @Module({
   imports: [
     ConfigModule,
+    MeetingModule,
   ],
   controllers: [
     VideoController,

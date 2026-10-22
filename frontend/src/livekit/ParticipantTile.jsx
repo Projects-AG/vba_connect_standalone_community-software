@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import {
     ParticipantTile as LKParticipantTile,
     useTracks,
@@ -7,47 +6,29 @@ import {
 import { Track } from "livekit-client";
 
 export default function ParticipantTile() {
-    const tracks = useTracks(
-        [
-            {
-                source: Track.Source.Camera,
-                withPlaceholder: true,
-            },
-        ],
-        {
-            onlySubscribed: false,
-        }
-    );
+    const tracks = useTracks([Track.Source.Camera], {
+        onlySubscribed: false,
+    });
 
-    useEffect(() => {
-        console.log("========== TRACKS ==========");
-        console.log(tracks);
-    }, [tracks]);
+    const visibleTracks = tracks.filter(
+        (track) =>
+            track?.participant &&
+            track?.publication &&
+            track.publication.kind === Track.Kind.Video &&
+            track.source === Track.Source.Camera
+    );
 
     return (
         <>
-            {tracks.map((track, index) => {
-                console.log("========== TRACK ==========");
-                console.log(track);
-
-                console.log("Participant Identity:");
-                console.log(track.participant?.identity);
-
-                console.log("Participant Name:");
-                console.log(track.participant?.name);
-
-                console.log("Participant SID:");
-                console.log(track.participant?.sid);
-
-                console.log("Is Local:");
-                console.log(track.participant?.isLocal);
-
-                console.log("Track SID:");
-                console.log(track.publication?.trackSid);
+            {visibleTracks.map((track, index) => {
+                const participantName =
+                    track.participant?.name ||
+                    track.participant?.identity ||
+                    "Participant";
 
                 return (
                     <div
-                        key={track.publication?.trackSid || index}
+                        key={track.publication?.trackSid || `${track.participant?.identity || "participant"}-${index}`}
                         className="relative rounded-xl overflow-hidden bg-on-background shadow-lg ring-1 ring-outline-variant/10"
                     >
                         <LKParticipantTile
@@ -69,7 +50,7 @@ export default function ParticipantTile() {
                             </span>
 
                             <span className="font-label-md text-label-md">
-                               {track.participant?.name || track.participant?.identity}
+                                {participantName}
                             </span>
                         </div>
                     </div>

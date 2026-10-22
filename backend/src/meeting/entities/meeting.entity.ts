@@ -3,7 +3,11 @@ import {
   PrimaryColumn,
   Column,
   CreateDateColumn,
+  Index,
+  OneToMany,
 } from 'typeorm';
+
+import { MeetingRecordingEntity } from './meeting-recording.entity';
 
 @Entity('meetings')
 export class MeetingEntity {
@@ -37,6 +41,9 @@ export class MeetingEntity {
   @Column({ name: 'leader_name', length: 120, default: '' })
   leaderName: string;
 
+  @Column({ name: 'user_id', type: 'varchar', length: 36, nullable: true })
+  userId: string | null;
+
   @Column({ type: 'simple-json' })
   participants: string[];
 
@@ -51,4 +58,7 @@ export class MeetingEntity {
 
   @CreateDateColumn({ name: 'created_at', type: 'datetime' })
   createdAt: Date;
+
+  @OneToMany(() => MeetingRecordingEntity, (recording) => recording.meeting)
+  recordings?: MeetingRecordingEntity[];
 }

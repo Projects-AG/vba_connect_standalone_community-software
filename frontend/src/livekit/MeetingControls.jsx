@@ -1,16 +1,30 @@
 import useMeetingControls from "./useMeetingControls";
 
-function ControlButton({ active, icon, label, onClick, highlighted }) {
+function ControlButton({
+  active,
+  icon,
+  label,
+  onClick,
+  highlighted,
+  kind = 'default',
+  disabled = false,
+}) {
+  const toneClass = highlighted
+    ? kind === 'danger'
+      ? 'bg-error text-white shadow-lg shadow-error/20'
+      : 'bg-primary text-white shadow-lg shadow-primary/20'
+    : active
+      ? 'bg-surface-variant text-on-surface-variant hover:bg-outline-variant'
+      : 'bg-error/10 text-error hover:bg-error/20'
+
   return (
     <div className="flex flex-col items-center group">
       <button
-        onClick={onClick}
-        className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 active:scale-95 ${
-          highlighted
-            ? "bg-primary text-white shadow-lg shadow-primary/20"
-            : active
-            ? "bg-surface-variant text-on-surface-variant hover:bg-outline-variant"
-            : "bg-error/10 text-error hover:bg-error/20"
+        type="button"
+        onClick={disabled ? undefined : onClick}
+        disabled={disabled}
+        className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 active:scale-95 ${toneClass} ${
+          disabled ? 'opacity-50 cursor-not-allowed' : ''
         }`}
       >
         <span className="material-symbols-outlined">{icon}</span>
@@ -34,6 +48,10 @@ export default function MeetingControls({
   setSharing,
   leaveCall,
   audioOnly = false,
+  recordingActive = false,
+  recordingLoading = false,
+  recordingDisabled = false,
+  onToggleRecording,
 }) {
   const {
     toggleMic,
@@ -77,6 +95,16 @@ export default function MeetingControls({
             highlighted={sharing}
           />
         )}
+
+        <ControlButton
+          active={recordingActive}
+          icon={recordingActive ? 'stop_circle' : 'fiber_manual_record'}
+          label={recordingActive ? 'Recording' : 'Record'}
+          onClick={onToggleRecording}
+          highlighted={recordingActive}
+          kind={recordingActive ? 'danger' : 'default'}
+          disabled={recordingDisabled || recordingLoading}
+        />
 
         <div className="w-px h-8 bg-outline-variant mx-1" />
 

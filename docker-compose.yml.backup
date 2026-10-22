@@ -1,0 +1,56 @@
+# Local one-app stack: UI + API behind nginx (same pattern as Azure).
+# LiveKit optional for video — start with: docker compose --profile livekit up
+#
+# UI + API:  http://localhost:8080
+# Swagger:   http://localhost:8080/api  (proxied)
+# Direct API:http://localhost:3000/api  (optional)
+
+services:
+  backend:
+    image: projectsag/project-loop-backend:latest
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:8080"
+    environment:
+      PORT: "8080"
+      CORS_ORIGINS: "http://localhost:8080,http://localhost:5173"
+      LIVEKIT_HOST: "http://livekit:7880"
+      LIVEKIT_API_KEY: "devkey"
+      LIVEKIT_API_SECRET: "myverylongsecretkey12345678901234567890"
+      JWT_SECRET: "project-loop-dev-secret-change-me"
+      JWT_EXPIRES_IN: "7d"
+      DB_HOST: ${DB_HOST:-host.docker.internal}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_USER: ${DB_USER:-root}
+      DB_PASSWORD: ${DB_PASSWORD:-}
+      DB_NAME: ${DB_NAME:-loop_db}
+      DB_SYNC: ${DB_SYNC:-true}
+    restart: unless-stopped
+
+  web:
+    image: projectsag/project-loop:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ""
+        VITE_LIVEKIT_URL: "ws://localhost:7880"
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  livekit:
+    profiles: ["livekit"]
+    image: livekit/livekit-server:v1.12.0
+    command: --config /etc/livekit.yaml
+    volumes:
+      - ./livekit.yaml:/etc/livekit.yaml:ro
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "50000-50020:50000-50020/udp"
+    restart: unless-stopped

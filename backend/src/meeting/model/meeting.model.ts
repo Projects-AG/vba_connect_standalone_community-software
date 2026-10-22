@@ -15,14 +15,25 @@ export class MeetingModel {
     return this.meetingsRepo.save(entity);
   }
 
-  findAll() {
+  findAll(userId?: string) {
     return this.meetingsRepo.find({
+      where: userId ? { userId } : {},
       order: { createdAt: 'DESC' },
     });
   }
 
-  findById(id: string) {
-    return this.meetingsRepo.findOne({ where: { meetingId: id } });
+  findById(id: string, userId?: string) {
+    return this.meetingsRepo.findOne({
+      where: userId ? { meetingId: id, userId } : { meetingId: id },
+      relations: ['recordings'],
+    });
+  }
+
+  findByRoomName(roomName: string) {
+    return this.meetingsRepo.findOne({
+      where: { roomName },
+      relations: ['recordings'],
+    });
   }
 
   async update(id: string, data: Partial<MeetingEntity>) {

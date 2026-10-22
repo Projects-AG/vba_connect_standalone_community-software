@@ -144,6 +144,10 @@ export default function ActiveCall() {
   const [muted, setMuted] = useState(false)
   const [cameraOn, setCameraOn] = useState(() => !(state?.callMode === 'audio'))
   const [sharing, setSharing] = useState(false)
+  const [recordingActive, setRecordingActive] = useState(false)
+  const [recordingEgressId, setRecordingEgressId] = useState(null)
+  const [recordingLoading, setRecordingLoading] = useState(false)
+  const [recordingError, setRecordingError] = useState('')
   // Chat panel closed by default (1:1 audio/video and meetings)
   const [chatOpen, setChatOpen] = useState(false)
   const [messages, setMessages] = useState([])
@@ -360,8 +364,49 @@ export default function ActiveCall() {
     }
   }
 
+  const handleRecordingToggle = useCallback(async () => {
+    const roomName = meeting.roomName || meeting.meetingId
+    if (!roomName || recordingLoading) return
+
+    try {
+      setRecordingError('')
+      setRecordingLoading(true)
+
+      if (recordingActive && recordingEgressId) {
+        await meetingApi.stopRecording(recordingEgressId)
+        setRecordingActive(false)
+        setRecordingEgressId(null)
+        return
+      }
+
+      const response = await meetingApi.startRecording(roomName)
+      const egress = response?.egress || {}
+      const nextEgressId = egress.egressId || egress.id || null
+
+      setRecordingEgressId(nextEgressId)
+      setRecordingActive(Boolean(nextEgressId))
+
+      if (!nextEgressId) {
+        setRecordingError('Recording started, but no egress ID was returned.')
+      }
+    } catch (err) {
+      setRecordingError(err.message || 'Unable to toggle recording')
+    } finally {
+      setRecordingLoading(false)
+    }
+  }, [meeting.meetingId, meeting.roomName, recordingActive, recordingEgressId, recordingLoading])
+
   const cancelOutgoing = async () => {
     localHangupRef.current = true
+    if (recordingActive && recordingEgressId) {
+      try {
+        await meetingApi.stopRecording(recordingEgressId)
+      } catch {
+        /* ignore */
+      }
+      setRecordingActive(false)
+      setRecordingEgressId(null)
+    }
     if (callLogId) {
       try {
         await callsApi.endCall(callLogId)
@@ -374,6 +419,15 @@ export default function ActiveCall() {
 
   const leaveCall = async () => {
     localHangupRef.current = true
+    if (recordingActive && recordingEgressId) {
+      try {
+        await meetingApi.stopRecording(recordingEgressId)
+      } catch {
+        /* ignore */
+      }
+      setRecordingActive(false)
+      setRecordingEgressId(null)
+    }
     if (callLogId) {
       try {
         await callsApi.endCall(callLogId)
@@ -411,6 +465,12 @@ export default function ActiveCall() {
           </div>
         )}
 
+        {recordingError && (
+          <div className="mx-8 mt-4 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
+            {recordingError}
+          </div>
+        )}
+
         <header className="flex justify-between items-center px-8 h-16 w-full bg-surface/80 backdrop-blur-md flex-shrink-0">
           <div className="flex items-center gap-4 min-w-0">
             <h1 className="font-headline-lg text-headline-lg font-black text-on-background tracking-tight truncate">
@@ -422,6 +482,12 @@ export default function ActiveCall() {
               <div className="flex items-center gap-2 bg-error-container text-on-error-container px-3 py-1 rounded-full animate-pulse flex-shrink-0">
                 <div className="w-2 h-2 bg-error rounded-full" />
                 <span className="font-label-md text-label-md">{timer}</span>
+              </div>
+            )}
+            {recordingActive && (
+              <div className="flex items-center gap-2 bg-error-container text-on-error-container px-3 py-1 rounded-full animate-pulse flex-shrink-0">
+                <div className="w-2 h-2 bg-error rounded-full" />
+                <span className="font-label-md text-label-md">Recording</span>
               </div>
             )}
             {callPhase === 'connecting' && (
@@ -565,8 +631,45 @@ export default function ActiveCall() {
                 setSharing={setSharing}
                 leaveCall={leaveCall}
                 audioOnly={audioOnly}
+                recordingActive={recordingActive}
+                recordingLoading={recordingLoading}
+                recordingDisabled={!meeting.roomName && !meeting.meetingId}
+                onToggleRecording={handleRecordingToggle}
               />
             </LiveKitRoom>
+          )}
+
+          {meeting.recordings?.length > 0 && (
+            <aside className="w-80 max-w-[35%] flex-shrink-0 bg-surface-container-lowest rounded-2xl flex flex-col shadow-xl ring-1 ring-outline-variant/15 overflow-hidden animate-content-entrance">
+              <div className="px-4 py-3 border-b border-outline-variant/30">
+                <h2 className="font-headline-md text-headline-md font-bold text-on-surface">
+                  Recording & AI notes
+                </h2>
+              </div>
+              <div className="p-4 space-y-3 overflow-y-auto custom-scrollbar">
+                {meeting.recordings.map((recording) => (
+                  <div key={recording.recordingId || recording.egressId || recording.roomName} className="rounded-xl bg-surface-container p-3 border border-outline-variant/20">
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="font-label-md text-label-md text-primary">{recording.status || 'unknown'}</span>
+                      {recording.meetnoteStatus && (
+                        <span className="text-[10px] uppercase tracking-[0.12em] text-on-surface-variant">
+                          {recording.meetnoteStatus}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-body-sm text-on-surface-variant">{recording.fileName || recording.roomName || 'loop recording'}</p>
+                    {recording.meetnoteMeetingId && (
+                      <p className="mt-2 text-body-sm text-on-surface-variant">
+                        MeetNote session: {recording.meetnoteMeetingId}
+                      </p>
+                    )}
+                    {recording.errorMessage && (
+                      <p className="mt-2 text-body-sm text-red-600">{recording.errorMessage}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </aside>
           )}
 
           {/* Right chat panel — real 1:1 thread */}

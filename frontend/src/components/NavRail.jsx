@@ -8,6 +8,7 @@ const items = [
   { to: '/teams', icon: 'groups', label: 'Teams' },
   { to: '/calendar', icon: 'calendar_today', label: 'Calendar' },
   { to: '/calls', icon: 'call', label: 'Calls' },
+  { to: '/recordings', icon: 'videocam', label: 'Recordings & Recaps' },
 ]
 
 export default function NavRail({ withTopOffset = false }) {

@@ -89,7 +89,7 @@ export class CallsService {
       meetingTime: '',
       host: user.name,
       participants: [user.name, peer.name],
-    } as any);
+    } as any, user.id);
 
     const meeting = meetingRes.data;
     const id = randomUUID();

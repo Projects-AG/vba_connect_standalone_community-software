@@ -117,6 +117,20 @@ export default function Calendar() {
     goToActiveCall(meeting)
   }
 
+  const goToMeetingDetail = (meeting) => {
+    if (!meeting?.meetingId) return
+    const shouldOpenRecap =
+      ['ended', 'completed', 'complete'].includes(String(meeting.status || '').toLowerCase()) ||
+      Array.isArray(meeting.recordings) && meeting.recordings.length > 0
+
+    if (shouldOpenRecap) {
+      navigate(`/recordings/${meeting.meetingId}`)
+      return
+    }
+
+    goToActiveCall(meeting)
+  }
+
   const onMeetNowShareLink = async (meeting, url) => {
     setMeetNowOpen(false)
     showToast(`Invite link copied — ${url || ''}`)
@@ -209,7 +223,7 @@ export default function Calendar() {
                 dateClick={openComingSoon}
                 eventClick={(info) => {
                   const meeting = info.event.extendedProps?.meeting
-                  if (meeting?.meetingId) goToActiveCall(meeting)
+                  if (meeting?.meetingId) goToMeetingDetail(meeting)
                 }}
                 datesSet={syncTitle}
                 dayMaxEvents={3}

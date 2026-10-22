@@ -9,6 +9,8 @@ import Chat from './pages/Chat'
 import Profile from './pages/Profile'
 import ComingSoonPage from './pages/ComingSoonPage'
 import ProtectedRoute from './auth/ProtectedRoute'
+import RecordingsLibraryPage from './pages/RecordingsLibraryPage'
+import MeetingRecapPage from './pages/MeetingRecapPage'
 
 const HOME = '/chat'
 
@@ -64,6 +66,22 @@ export default function App() {
         element={
           <ProtectedRoute>
             <ActiveCall />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/recordings"
+        element={
+          <ProtectedRoute>
+            <RecordingsLibraryPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/recordings/:meetingId"
+        element={
+          <ProtectedRoute>
+            <MeetingRecapPage />
           </ProtectedRoute>
         }
       />

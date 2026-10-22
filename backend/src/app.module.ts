@@ -9,6 +9,10 @@ import { ChatModule } from './chat/chat.module';
 import { CallsModule } from './calls/calls.module';
 import { UserEntity } from './auth/entities/user.entity';
 import { MeetingEntity } from './meeting/entities/meeting.entity';
+import { MeetingRecordingEntity } from './meeting/entities/meeting-recording.entity';
+import { TranscriptSegmentEntity } from './meeting/entities/transcript-segment.entity';
+import { ActionItemEntity } from './meeting/entities/action-item.entity';
+import { DecisionEntity } from './meeting/entities/decision.entity';
 import { ConversationEntity } from './chat/entities/conversation.entity';
 import { MessageEntity } from './chat/entities/message.entity';
 import { CallLogEntity } from './calls/entities/call-log.entity';
@@ -31,6 +35,10 @@ import { CallLogEntity } from './calls/entities/call-log.entity';
         entities: [
           UserEntity,
           MeetingEntity,
+          MeetingRecordingEntity,
+          TranscriptSegmentEntity,
+          ActionItemEntity,
+          DecisionEntity,
           ConversationEntity,
           MessageEntity,
           CallLogEntity,
